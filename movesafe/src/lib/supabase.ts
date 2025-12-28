@@ -49,6 +49,7 @@ export interface Transaction {
   tx_hash?: string;
   created_at: string;
   executed_at?: string;
+  updated_at?: string;
 }
 
 export interface Signature {

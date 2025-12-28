@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Shield, Plus, TrendingDown, Clock, CheckCircle } from 'lucide-react';
 import { aptos } from '@/lib/movement';
 import { useWallet } from '@aptos-labs/wallet-adapter-react';
+import { useToast } from '@/components/ui/ToastProvider';
 
 interface Allowance {
   beneficiary: string;
@@ -20,6 +21,7 @@ interface SafeGuardsTabProps {
 
 export function SafeGuardsTab({ safeAddress, contractAddress, onSetLimit }: SafeGuardsTabProps) {
   const { account } = useWallet();
+  const { toast } = useToast();
   const [allowances, setAllowances] = useState<Allowance[]>([]);
   const [loading, setLoading] = useState(true);
   const [withdrawing, setWithdrawing] = useState<string | null>(null);
@@ -66,17 +68,29 @@ export function SafeGuardsTab({ safeAddress, contractAddress, onSetLimit }: Safe
 
   const handleInstantWithdraw = async (beneficiary: string, amount: number) => {
     if (!account) {
-      alert('Please connect your wallet');
+      toast({
+        variant: 'warning',
+        title: 'Connect wallet first',
+        description: 'Only connected owners can trigger instant withdraw.',
+      });
       return;
     }
 
     setWithdrawing(beneficiary);
     try {
-      alert('Instant Withdraw functionality will be available after contract deployment. For now, this creates a transaction proposal.');
+      toast({
+        variant: 'info',
+        title: 'Instant withdraw coming soon',
+        description: 'Feature will be available after the spending_limit contract is deployed.',
+      });
       await loadAllowances();
     } catch (err: any) {
       console.error('Error withdrawing:', err);
-      alert(`Withdrawal failed: ${err.message}`);
+      toast({
+        variant: 'error',
+        title: 'Withdrawal failed',
+        description: err?.message || 'Unable to process instant withdraw.',
+      });
     } finally {
       setWithdrawing(null);
     }

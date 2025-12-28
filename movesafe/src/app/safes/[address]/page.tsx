@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeft, Copy, Check, Plus, Wallet } from 'lucide-react';
 import Link from 'next/link';
@@ -12,7 +12,9 @@ import { SafeGuardsTab } from '@/components/SafeGuardsTab';
 import { useWallet } from '@aptos-labs/wallet-adapter-react';
 import { Ed25519PublicKey } from '@aptos-labs/ts-sdk';
 import { assembleMultiSigAuthenticator } from '@/lib/multisig';
-import { aptos } from '@/lib/movement';
+import { aptos, withMovementClient } from '@/lib/movement';
+import { useToast } from '@/components/ui/ToastProvider';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 
 export default function SafeDashboard() {
   const params = useParams();
@@ -33,6 +35,41 @@ export default function SafeDashboard() {
   const [showSetLimitModal, setShowSetLimitModal] = useState(false);
   const [copied, setCopied] = useState(false);
   const [contractAddress, setContractAddress] = useState('0x1');
+  const { toast, dismiss } = useToast();
+  type ConfirmConfig = {
+    title: string;
+    description?: string;
+    tone?: 'default' | 'danger';
+    confirmLabel?: string;
+    cancelLabel?: string;
+    resolve: (confirmed: boolean) => void;
+  };
+  const [confirmState, setConfirmState] = useState<ConfirmConfig | null>(null);
+
+  const confirmAction = useCallback(
+    (config: Omit<ConfirmConfig, 'resolve'>) =>
+      new Promise<boolean>((resolve) => {
+        setConfirmState({
+          title: config.title,
+          description: config.description,
+          tone: config.tone ?? 'default',
+          confirmLabel: config.confirmLabel ?? 'Confirm',
+          cancelLabel: config.cancelLabel ?? 'Cancel',
+          resolve,
+        });
+      }),
+    []
+  );
+
+  const resolveConfirm = useCallback(
+    (result: boolean) => {
+      setConfirmState((current) => {
+        current?.resolve(result);
+        return null;
+      });
+    },
+    []
+  );
 
   const isConnectedOwner = (() => {
     if (!safe || !account) return false;
@@ -145,28 +182,37 @@ export default function SafeDashboard() {
 
   const handleSignTransaction = async (txId: string) => {
     if (!account || !signTransaction) {
-      alert('⚠️ Please connect your wallet to sign transactions');
+      toast({
+        variant: 'warning',
+        title: 'Connect wallet to sign',
+        description: 'Please connect an owner wallet before signing transactions.',
+      });
       return;
     }
 
     if (!safe) {
-      alert('⚠️ Safe data is not loaded yet. Please refresh and try again.');
+      toast({
+        variant: 'warning',
+        title: 'Safe not ready',
+        description: 'Safe data is still loading. Refresh and try again.',
+      });
       return;
     }
 
     if (!isConnectedOwner) {
-      alert('❌ This wallet is not an owner of this Safe. Please connect an owner wallet to sign.');
+      toast({
+        variant: 'error',
+        title: 'Wallet not an owner',
+        description: 'Switch to an owner wallet to sign this transaction.',
+      });
       return;
     }
 
-    // Confirmation prompt
-    const confirmed = window.confirm(
-      '🔐 Sign Transaction\n\n' +
-      'You are about to sign this transaction with your wallet.\n\n' +
-      'This will NOT execute the transaction yet - it only records your approval.\n\n' +
-      'Do you want to continue?'
-    );
-
+    const confirmed = await confirmAction({
+      title: 'Sign this transaction?',
+      description: 'Signing logs your approval off-chain. Execution still requires the threshold.',
+      confirmLabel: 'Sign transaction',
+    });
     if (!confirmed) {
       return;
     }
@@ -188,19 +234,25 @@ export default function SafeDashboard() {
       const maxGasAmount = txOptions?.maxGasAmount ? Number(txOptions.maxGasAmount) : undefined;
       const gasUnitPrice = txOptions?.gasUnitPrice ? Number(txOptions.gasUnitPrice) : undefined;
       const expireTimestamp = txOptions?.expireTimestamp ? Number(txOptions.expireTimestamp) : undefined;
-      const rawTxn = await aptos.transaction.build.simple({
-        sender: safeAddress,
-        data: {
-          function: transaction.payload.function as `${string}::${string}::${string}`,
-          typeArguments: transaction.payload.typeArguments || [],
-          functionArguments: transaction.payload.functionArguments || [],
-        },
-        options: {
-          accountSequenceNumber: transaction.sequence_number,
-          maxGasAmount,
-          gasUnitPrice,
-          expireTimestamp,
-        },
+      const rawTxn = await withMovementClient('build.simple(sign)', async (client, meta) => {
+        if (DEBUG)
+          console.info(
+            `[Movement RPC] Building tx for signing via ${meta.fullnode} (sequence=${transaction.sequence_number})`
+          );
+        return client.transaction.build.simple({
+          sender: safeAddress,
+          data: {
+            function: transaction.payload.function as `${string}::${string}::${string}`,
+            typeArguments: transaction.payload.typeArguments || [],
+            functionArguments: transaction.payload.functionArguments || [],
+          },
+          options: {
+            accountSequenceNumber: transaction.sequence_number,
+            maxGasAmount,
+            gasUnitPrice,
+            expireTimestamp,
+          },
+        });
       });
 
       // Request wallet signature - this MUST trigger a wallet prompt in production
@@ -225,14 +277,26 @@ export default function SafeDashboard() {
         throw new Error(`Database error: ${dbError.message}`);
       }
 
-      alert('✅ Transaction signed successfully!\n\nYour signature has been recorded.');
+      toast({
+        variant: 'success',
+        title: 'Signature recorded',
+        description: 'Your approval has been saved for this transaction.',
+      });
       await loadSafeData();
     } catch (err: any) {
       console.error('Sign transaction error:', err);
       if (err.message?.includes('User rejected')) {
-        alert('❌ Signature Cancelled\n\nYou rejected the signature request in your wallet.');
+          toast({
+            variant: 'warning',
+            title: 'Signature cancelled',
+            description: 'You rejected the signature request in your wallet.',
+          });
       } else {
-        alert(`❌ Signing Failed\n\n${err.message}`);
+        toast({
+          variant: 'error',
+          title: 'Signing failed',
+          description: err?.message || 'Unable to sign this transaction.',
+        });
       }
     }
   };
@@ -240,16 +304,17 @@ export default function SafeDashboard() {
   const handleExecuteTransaction = async (txId: string) => {
     if (!safe) return;
 
-    const confirmed = window.confirm(
-      '⚡ Execute Transaction\n\n' +
-      'This will submit the transaction to the blockchain.\n\n' +
-      'Make sure you have enough signatures before executing.\n\n' +
-      'Do you want to proceed?'
-    );
-
+    const confirmed = await confirmAction({
+      title: 'Execute transaction?',
+      description: 'This submits the multisig payload to Movement. Double-check signatures and details before proceeding.',
+      confirmLabel: 'Execute now',
+      tone: 'danger',
+    });
     if (!confirmed) {
       return;
     }
+
+    let submittedHash: string | null = null;
 
     try {
       const transaction = transactions.find((tx) => tx.id === txId);
@@ -257,28 +322,34 @@ export default function SafeDashboard() {
 
       const txSignatures = signatures[txId] || [];
       if (txSignatures.length < safe.threshold) {
-        throw new Error('Not enough signatures');
+        throw new Error('Not enough signatures to execute');
       }
 
-      const rawTxn = await aptos.transaction.build.simple({
-        sender: safeAddress,
-        data: {
-          function: transaction.payload.function as `${string}::${string}::${string}`,
-          typeArguments: transaction.payload.typeArguments,
-          functionArguments: transaction.payload.functionArguments,
-        },
-        options: {
-          accountSequenceNumber: transaction.sequence_number,
-          maxGasAmount: (transaction.payload as any).txOptions?.maxGasAmount
-            ? Number((transaction.payload as any).txOptions.maxGasAmount)
-            : undefined,
-          gasUnitPrice: (transaction.payload as any).txOptions?.gasUnitPrice
-            ? Number((transaction.payload as any).txOptions.gasUnitPrice)
-            : undefined,
-          expireTimestamp: (transaction.payload as any).txOptions?.expireTimestamp
-            ? Number((transaction.payload as any).txOptions.expireTimestamp)
-            : undefined,
-        },
+      const rawTxn = await withMovementClient('build.simple(execute)', async (client, meta) => {
+        if (DEBUG)
+          console.info(
+            `[Movement RPC] Building tx for execution via ${meta.fullnode} (sequence=${transaction.sequence_number})`
+          );
+        return client.transaction.build.simple({
+          sender: safeAddress,
+          data: {
+            function: transaction.payload.function as `${string}::${string}::${string}`,
+            typeArguments: transaction.payload.typeArguments,
+            functionArguments: transaction.payload.functionArguments,
+          },
+          options: {
+            accountSequenceNumber: transaction.sequence_number,
+            maxGasAmount: (transaction.payload as any).txOptions?.maxGasAmount
+              ? Number((transaction.payload as any).txOptions.maxGasAmount)
+              : undefined,
+            gasUnitPrice: (transaction.payload as any).txOptions?.gasUnitPrice
+              ? Number((transaction.payload as any).txOptions.gasUnitPrice)
+              : undefined,
+            expireTimestamp: (transaction.payload as any).txOptions?.expireTimestamp
+              ? Number((transaction.payload as any).txOptions.expireTimestamp)
+              : undefined,
+          },
+        });
       });
 
       const signatureData = txSignatures.map((sig) => ({
@@ -292,10 +363,16 @@ export default function SafeDashboard() {
         safe.threshold
       );
 
-      const committedTxn = await aptos.transaction.submit.simple({
-        transaction: rawTxn,
-        senderAuthenticator,
+      const committedTxn = await withMovementClient('submit.simple', async (client, meta) => {
+        console.info(`[Movement RPC] Submitting tx via ${meta.fullnode}`);
+        return client.transaction.submit.simple({
+          transaction: rawTxn,
+          senderAuthenticator,
+        });
       });
+
+      submittedHash = committedTxn.hash;
+      console.info('Submitted multisig transaction', committedTxn.hash);
 
       // Persist tx hash immediately so we can reconcile later even if confirmation is slow.
       await supabase
@@ -307,21 +384,42 @@ export default function SafeDashboard() {
 
       let executedTx: any = null;
       try {
-        executedTx = await aptos.waitForTransaction({
-          transactionHash: committedTxn.hash,
-          options: {
-            timeoutSecs: 90,
-            waitForIndexer: false,
-          },
+        executedTx = await withMovementClient('waitForTransaction', async (client, meta) => {
+          if (DEBUG)
+            console.info(
+              `[Movement RPC] Waiting for tx ${committedTxn.hash} via ${meta.fullnode} (120s timeout)`
+            );
+          return client.waitForTransaction({
+            transactionHash: committedTxn.hash,
+            options: {
+              timeoutSecs: 120,
+              waitForIndexer: false,
+            },
+          });
         });
       } catch (e: any) {
         // If it times out pending, don't treat it as a hard failure.
         const msg = String(e?.message || '');
         if (msg.includes('timed out in pending state')) {
+          await supabase
+            .from('transactions')
+            .update({
+              status: 'PENDING',
+              tx_hash: committedTxn.hash,
+              executed_at: null,
+            })
+            .eq('id', txId);
+
           await loadSafeData();
-          alert(
-            `Submitted to chain but still pending confirmation.\n\nTx hash: ${committedTxn.hash}\n\nRefresh in a bit to see final status.`
-          );
+          toast({
+            variant: 'info',
+            title: 'Transaction pending on-chain',
+            description: `Submission succeeded.`,
+            action: {
+              label: 'Open explorer',
+              href: `https://explorer.movementnetwork.xyz/txn/${committedTxn.hash}?network=testnet`,
+            },
+          });
           return;
         }
         throw e;
@@ -337,15 +435,45 @@ export default function SafeDashboard() {
         .eq('id', txId);
 
       await loadSafeData();
-      alert('Transaction executed successfully!');
+      toast({
+        variant: 'success',
+        title: 'Transaction executed',
+        description: 'Movement explorer',
+        action: {
+          label: 'View on explorer',
+          href: `https://explorer.movementnetwork.xyz/txn/${executedTx?.hash || committedTxn.hash}?network=testnet`,
+        },
+      });
     } catch (err: any) {
       console.error('Error executing transaction:', err);
-      alert(`Failed to execute: ${err.message}`);
+      if (txId) {
+        await supabase
+          .from('transactions')
+          .update({
+            status: 'REJECTED',
+            executed_at: null,
+            tx_hash: submittedHash || null,
+          })
+          .eq('id', txId);
+        await loadSafeData();
+      }
+      toast({
+        variant: 'error',
+        title: 'Execution failed',
+        description: err?.message || 'Unable to execute this transaction.',
+      });
     }
   };
 
   const pendingTransactions = transactions.filter((tx) => tx.status === 'PENDING');
   const executedTransactions = transactions.filter((tx) => tx.status === 'EXECUTED');
+  const historyTransactions = transactions
+    .filter((tx) => !!tx.tx_hash)
+    .sort(
+      (a, b) =>
+        new Date(b.executed_at || b.created_at).getTime() -
+        new Date(a.executed_at || a.created_at).getTime()
+    );
 
   if (loading) {
     return (
@@ -481,7 +609,7 @@ export default function SafeDashboard() {
                     : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700'
                 }`}
               >
-                History ({executedTransactions.length})
+                History ({historyTransactions.length})
               </button>
               <button
                 onClick={() => setActiveTab('safeguards')}
@@ -532,38 +660,89 @@ export default function SafeDashboard() {
 
             {activeTab === 'history' && (
               <>
-                {executedTransactions.length === 0 ? (
+                {historyTransactions.length === 0 ? (
                   <div className="text-center py-12 text-slate-500 dark:text-slate-400">
                     No transaction history
                   </div>
                 ) : (
-                  executedTransactions.map((tx) => (
-                    <div
-                      key={tx.id}
-                      className="border border-slate-200 dark:border-slate-700 rounded-lg p-4 bg-slate-50 dark:bg-slate-700/50"
-                    >
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <div className="text-slate-900 dark:text-slate-100 mb-1">
-                            Transfer to {tx.payload.functionArguments[0].slice(0, 10)}...
+                  historyTransactions.map((tx) => {
+                    const status = tx.status ?? 'PENDING';
+                    const statusStyles: Record<
+                      string,
+                      { label: string; badge: string; text: string }
+                    > = {
+                      PENDING: {
+                        label: 'Pending on-chain',
+                        badge: 'bg-amber-100 text-amber-700',
+                        text: 'text-amber-700',
+                      },
+                      EXECUTED: {
+                        label: 'Executed',
+                        badge: 'bg-emerald-100 text-emerald-700',
+                        text: 'text-emerald-700',
+                      },
+                      REJECTED: {
+                        label: 'Rejected',
+                        badge: 'bg-rose-100 text-rose-700',
+                        text: 'text-rose-700',
+                      },
+                    };
+                    const style = statusStyles[status] ?? statusStyles.PENDING;
+                    return (
+                      <div
+                        key={tx.id}
+                        className="border border-slate-200 dark:border-slate-700 rounded-lg p-4 bg-slate-50 dark:bg-slate-700/50 space-y-2"
+                      >
+                        <div className="flex items-start justify-between gap-4">
+                          <div>
+                            <div className="text-slate-900 dark:text-slate-100 mb-1">
+                              Transfer to {tx.payload.functionArguments[0].slice(0, 10)}...
+                            </div>
+                            <div className="flex items-center gap-2 text-sm">
+                              <span
+                                className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${style.badge}`}
+                              >
+                                {style.label}
+                              </span>
+                              <span className="text-slate-500 dark:text-slate-400">
+                                {status === 'EXECUTED'
+                                  ? `Executed: ${new Date(tx.executed_at!).toLocaleString()}`
+                                  : `Last update: ${new Date(
+                                      tx.updated_at || tx.created_at
+                                    ).toLocaleString()}`}
+                              </span>
+                            </div>
+                            {status === 'REJECTED' && (
+                              <p className="text-sm text-rose-600 dark:text-rose-400 mt-1">
+                                Execution failed. Retry from the queue when ready.
+                              </p>
+                            )}
+                            {status === 'PENDING' && (
+                              <p className="text-sm text-amber-600 dark:text-amber-400 mt-1">
+                                Submitted on-chain. Waiting for Movement to finalize.
+                              </p>
+                            )}
                           </div>
-                          <div className="text-sm text-slate-500 dark:text-slate-400">
-                            Executed: {new Date(tx.executed_at!).toLocaleString()}
+                          <div className="text-right space-y-2">
+                            {tx.tx_hash ? (
+                              <a
+                                href={`https://explorer.movementnetwork.xyz/txn/${tx.tx_hash}?network=testnet`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-blue-600 dark:text-blue-400 hover:underline text-sm"
+                              >
+                                View on Explorer →
+                              </a>
+                            ) : (
+                              <span className="text-sm text-slate-500 dark:text-slate-400">
+                                Awaiting submission
+                              </span>
+                            )}
                           </div>
-                        </div>
-                        <div className="text-sm">
-                          <a
-                            href={`https://explorer.movementnetwork.xyz/txn/${tx.tx_hash}?network=bardock%20testnet`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-blue-600 dark:text-blue-400 hover:underline"
-                          >
-                            View on Explorer →
-                          </a>
                         </div>
                       </div>
-                    </div>
-                  ))
+                    );
+                  })
                 )}
               </>
             )}
@@ -594,6 +773,16 @@ export default function SafeDashboard() {
         creatorAddress={account?.address?.toString() || ''}
         contractAddress={contractAddress}
         onSuccess={loadSafeData}
+      />
+      <ConfirmDialog
+        open={!!confirmState}
+        title={confirmState?.title || ''}
+        description={confirmState?.description}
+        tone={confirmState?.tone || 'default'}
+        confirmLabel={confirmState?.confirmLabel}
+        cancelLabel={confirmState?.cancelLabel}
+        onConfirm={() => resolveConfirm(true)}
+        onCancel={() => resolveConfirm(false)}
       />
     </div>
   );

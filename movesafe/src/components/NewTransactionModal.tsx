@@ -96,8 +96,9 @@ export function NewTransactionModal({
       const nextSequenceNumber = Math.max(onChainSeq, reservedMax + 1);
 
       // Deterministic tx bytes across sign + execute:
-      // pick an expireTimestamp far enough into the future and store the gas params we used.
-      const expireTimestamp = Math.floor(Date.now() / 1000) + 24 * 60 * 60;
+      // pick an expireTimestamp far enough into the future (1 week) and store the gas params we used.
+      // Keep TTL short (2 minutes) so stuck hashes expire quickly and sequences free up.
+      const expireTimestamp = Math.floor(Date.now() / 1000) + 2 * 60;
       const previewTxn = await aptos.transaction.build.simple({
         sender: safeAddress,
         data: {
@@ -111,9 +112,21 @@ export function NewTransactionModal({
         },
       });
 
+      const rawMaxGas = Number((previewTxn as any).rawTransaction?.max_gas_amount?.toString?.() || '0');
+      const rawGasPrice = Number((previewTxn as any).rawTransaction?.gas_unit_price?.toString?.() || '0');
+
+      const boostedMaxGas = rawMaxGas > 0 ? Math.ceil(rawMaxGas * 2) : 0;
+      const boostedGasPrice = rawGasPrice > 0 ? Math.ceil(rawGasPrice * 3) : 0;
+
+      const maxGasFloor = 400_000;
+      const gasPriceFloor = 250; // Movement mempool accepts txs faster with >=250 nanoApt per unit.
+
+      const maxGasAmount = Math.max(boostedMaxGas, maxGasFloor);
+      const gasUnitPrice = Math.max(boostedGasPrice, gasPriceFloor);
+
       const txOptions = {
-        maxGasAmount: (previewTxn as any).rawTransaction?.max_gas_amount?.toString?.(),
-        gasUnitPrice: (previewTxn as any).rawTransaction?.gas_unit_price?.toString?.(),
+        maxGasAmount: maxGasAmount.toString(),
+        gasUnitPrice: gasUnitPrice.toString(),
         expireTimestamp: (previewTxn as any).rawTransaction?.expiration_timestamp_secs?.toString?.(),
       };
 
