@@ -36,7 +36,7 @@ export interface Transaction {
   payload: {
     function: string;
     typeArguments: string[];
-    functionArguments: any[];
+    functionArguments: (string | number | boolean | Uint8Array)[];
     txOptions?: {
       maxGasAmount?: string;
       gasUnitPrice?: string;

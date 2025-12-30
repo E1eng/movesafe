@@ -49,12 +49,12 @@ export async function withMovementClient<T>(
     throw new Error('No Movement RPC clients configured');
   }
 
-  let lastError: any = null;
+  let lastError: unknown = null;
   for (let i = 0; i < aptosClients.length; i += 1) {
     const entry = aptosClients[i];
     try {
       return await fn(entry.client, { fullnode: entry.fullnode, index: i });
-    } catch (err: any) {
+    } catch (err: unknown) {
       lastError = err;
       if (i === aptosClients.length - 1) {
         break;

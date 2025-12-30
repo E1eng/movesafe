@@ -14,7 +14,7 @@ export interface SignatureData {
 export interface TransactionPayload {
   function: string;
   typeArguments: string[];
-  functionArguments: any[];
+  functionArguments: (string | number | boolean | Uint8Array)[];
 }
 
 export function generateSafeAddress(
@@ -51,7 +51,7 @@ export function generateSafeAddress(
 
 export function createTransactionPayload(
   func: string,
-  args: any[],
+  args: (string | number | boolean | Uint8Array)[],
   typeArgs: string[] = []
 ): TransactionPayload {
   return {

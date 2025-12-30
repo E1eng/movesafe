@@ -14,7 +14,7 @@ interface SafeRow {
   createdAt: string;
 }
 
- export default function SafesIndex() {
+export default function SafesIndex() {
   const { connected, account } = useWallet();
   const [safes, setSafes] = useState<SafeRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -50,9 +50,9 @@ interface SafeRow {
       const localSafesRaw = JSON.parse(localStorage.getItem('movesafe_safes') || '[]');
       const localSafes = Array.isArray(localSafesRaw)
         ? localSafesRaw.filter((s: any) => {
-            const owners = Array.isArray(s?.owners) ? s.owners : [];
-            return owners.map((o: any) => String(o).toLowerCase()).includes(connectedPubKey);
-          })
+          const owners = Array.isArray(s?.owners) ? s.owners : [];
+          return owners.map((o: string) => String(o).toLowerCase()).includes(connectedPubKey);
+        })
         : [];
 
       const allSafes = [
@@ -190,4 +190,4 @@ interface SafeRow {
       </div>
     </div>
   );
- }
+}
