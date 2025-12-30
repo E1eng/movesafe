@@ -49,8 +49,8 @@ export default function DraftSafePage() {
 
         if (dbError) throw dbError;
         setDraft(data as SafeDraft);
-      } catch (e: any) {
-        setError(e?.message || 'Failed to load draft');
+      } catch (e: unknown) {
+        setError(e instanceof Error ? e.message : 'Failed to load draft');
         setDraft(null);
       } finally {
         setLoading(false);
@@ -118,10 +118,12 @@ export default function DraftSafePage() {
         try {
           await aptos.getAccountInfo({ accountAddress: safeAddress });
           exists = true;
-        } catch (e: any) {
-          const status = e?.status ?? e?.response?.status;
-          const errorCode = e?.errorCode ?? e?.data?.error_code ?? e?.response?.data?.error_code;
-          const msg = e?.message || e?.response?.data?.message || 'Unknown error';
+        } catch (e: unknown) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const err = e as any;
+          const status = err?.status ?? err?.response?.status;
+          const errorCode = err?.errorCode ?? err?.data?.error_code ?? err?.response?.data?.error_code;
+          const msg = err?.message || err?.response?.data?.message || 'Unknown error';
 
           let rpcChainId: number | null = null;
           try {
@@ -165,8 +167,10 @@ export default function DraftSafePage() {
             });
 
             await aptos.waitForTransaction({ transactionHash: committed.hash });
-          } catch (submitErr: any) {
-            const submitMsg = submitErr?.message || submitErr?.response?.data?.message || 'Unknown submit error';
+          } catch (submitErr: unknown) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const sErr = submitErr as any;
+            const submitMsg = sErr?.message || sErr?.response?.data?.message || 'Unknown submit error';
             throw new Error(
               checkDetails
                 ? `Failed to activate safe on-chain. Submit error: ${submitMsg}. Check: ${checkDetails}`
@@ -212,8 +216,9 @@ export default function DraftSafePage() {
       }
 
       router.push(`/safes/${String(finalizedAddress || safeAddress)}`);
-    } catch (e: any) {
-      setError(e?.message || 'Failed to finalize draft');
+    } catch (e: unknown) {
+      const err = e as Error;
+      setError(err?.message || 'Failed to finalize draft');
     } finally {
       setFinalizing(false);
     }

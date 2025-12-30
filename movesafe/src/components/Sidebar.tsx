@@ -55,10 +55,10 @@ export function Sidebar() {
         <>
             <aside
                 className={`
-          fixed left-0 top-0 h-screen 
+          sticky top-0 h-screen shrink-0
           bg-white dark:bg-slate-950 
           border-r border-slate-200 dark:border-slate-800
-          transition-all duration-300 z-40 flex flex-col
+          transition-all duration-300 z-40 hidden lg:flex flex-col
           ${collapsed ? 'w-16' : 'w-64'}
         `}
             >

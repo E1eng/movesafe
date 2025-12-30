@@ -1,180 +1,218 @@
-import { useState } from 'react';
-import { Send, CheckCircle, FileSignature, Trash2 } from 'lucide-react';
+'use client';
+
+import { Clock, Check, Send, Copy, ChevronDown, ChevronUp, Signature as SignatureIcon, Zap } from 'lucide-react';
 import { Transaction, Signature } from '@/lib/supabase';
-import { useWallet } from '@aptos-labs/wallet-adapter-react';
+import { Button } from '@/components/ui/Button';
+import { Card } from '@/components/ui/Card';
+import { Badge } from '@/components/ui/Badge';
+import { useState } from 'react';
 
 interface TransactionQueueItemProps {
   transaction: Transaction;
-  threshold: number;
-  signatureCount: number;
   signatures: Signature[];
-  ownerPublicKeys: string[];
-  onSign: (txId: string) => Promise<void>;
-  onExecute: (txId: string) => Promise<void>;
-  onDiscard: (txId: string) => Promise<void>;
+  threshold: number;
+  canSign: boolean;
+  canExecute: boolean;
+  onSign: () => void;
+  onExecute: () => void;
+  onDiscard: () => void;
+  signingTxId: string | null;
+  executingTxId: string | null;
 }
 
 export function TransactionQueueItem({
   transaction,
-  threshold,
-  signatureCount,
   signatures,
-  ownerPublicKeys,
+  threshold,
+  canSign,
+  canExecute,
   onSign,
   onExecute,
   onDiscard,
+  signingTxId,
+  executingTxId,
 }: TransactionQueueItemProps) {
-  const { account } = useWallet();
-  const [loading, setLoading] = useState(false);
+  const [expanded, setExpanded] = useState(false);
 
-  const isExecutable = signatureCount >= threshold;
-  const hasSigned = account?.address
-    ? signatures.some(
-      (sig) => sig.signer_address.toLowerCase() === account.address.toString().toLowerCase()
-    )
-    : false;
+  const signatureCount = signatures.length;
+  const progress = Math.min((signatureCount / threshold) * 100, 100);
+  const isReady = signatureCount >= threshold;
+  const isSigning = signingTxId === transaction.id;
+  const isExecuting = executingTxId === transaction.id;
 
-  const handleSign = async () => {
-    setLoading(true);
-    try {
-      await onSign(transaction.id);
-    } finally {
-      setLoading(false);
-    }
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text).catch(() => { });
   };
 
-  const handleExecute = async () => {
-    setLoading(true);
-    try {
-      await onExecute(transaction.id);
-    } finally {
-      setLoading(false);
+  // Helper to extract details from payload
+  const getTransferDetails = () => {
+    const args = transaction.payload.functionArguments;
+    // Assuming 0x1::aptos_account::transfer or 0x1::coin::transfer
+    // args: [recipient, amount]
+    if (args && args.length >= 2) {
+      return {
+        recipient: String(args[0]),
+        amount: String(args[1])
+      };
     }
+    return { recipient: 'Unknown', amount: '0' };
   };
 
-  const formatAddress = (address: string) => {
-    if (address.length <= 10) return address;
-    return `${address.slice(0, 6)}...${address.slice(-4)}`;
-  };
+  const { recipient, amount } = getTransferDetails();
 
-  const getTransactionDescription = () => {
-    const { payload } = transaction;
-    if (payload.function === '0x1::coin::transfer' || payload.function === '0x1::aptos_account::transfer') {
-      const recipient = payload.functionArguments[0];
-      const amount = payload.functionArguments[1];
-      const moveAmount = (Number(amount) / 100000000).toFixed(8);
-      return (
-        <div>
-          <span className="font-medium">Transfer </span>
-          <span className="font-mono text-blue-600 dark:text-blue-400">
-            {moveAmount} MOVE
-          </span>
-          <span> to </span>
-          <span className="font-mono text-slate-600 dark:text-slate-400">
-            {formatAddress(recipient)}
-          </span>
-        </div>
-      );
-    }
-    return <span className="font-mono text-sm">{payload.function}</span>;
-  };
-
-  const handleDiscard = async () => {
-    if (!confirm('Are you sure you want to discard this transaction? This action cannot be undone.')) return;
-    setLoading(true);
-    try {
-      await onDiscard(transaction.id);
-    } finally {
-      setLoading(false);
-    }
+  // Format amount from octas to MOVE
+  const formatAmount = (octas: string) => {
+    const num = parseFloat(octas) / 100000000;
+    return num.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 8 });
   };
 
   return (
-    <div className="border border-slate-200 dark:border-slate-700 rounded-xl p-4 bg-white dark:bg-slate-800 shadow-sm">
-      <div className="flex justify-between items-start mb-4">
-        <div className="flex items-start gap-3">
-          <div className="p-2 bg-slate-100 dark:bg-slate-700 rounded-lg">
-            <Send className="w-5 h-5 text-slate-600 dark:text-slate-400" />
+    <Card className="overflow-hidden">
+      {/* Main Content */}
+      <div className="flex items-center gap-4">
+        {/* Status Icon */}
+        <div className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 ${isReady
+          ? 'bg-green-100 dark:bg-green-900/30'
+          : 'bg-blue-100 dark:bg-blue-900/30'
+          }`}>
+          {isReady ? (
+            <Check className="w-6 h-6 text-green-600 dark:text-green-400" />
+          ) : (
+            <Clock className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+          )}
+        </div>
+
+        {/* Transaction Info */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-1">
+            <h4 className="font-semibold text-slate-900 dark:text-white truncate">
+              Send {formatAmount(amount)} MOVE
+            </h4>
+            {isReady ? (
+              <Badge variant="success" size="sm">Ready</Badge>
+            ) : (
+              <Badge variant="primary" size="sm">Pending</Badge>
+            )}
           </div>
-          <div>
-            <div className="text-sm text-slate-900 dark:text-slate-100 mb-1">
-              {getTransactionDescription()}
-            </div>
-            <div className="text-xs text-slate-500 dark:text-slate-400">
-              Created {new Date(transaction.created_at).toLocaleString()}
-            </div>
+          <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
+            <span>To:</span>
+            <code className="font-mono text-xs bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">
+              {recipient.slice(0, 10)}...{recipient.slice(-6)}
+            </code>
+            <button
+              onClick={() => copyToClipboard(recipient)}
+              className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded transition-colors"
+            >
+              <Copy className="w-3 h-3" />
+            </button>
           </div>
         </div>
-        <div className="text-right">
-          <div className="text-xs font-mono text-slate-500 dark:text-slate-400 mb-1">
-            #{transaction.sequence_number}
-          </div>
-          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
-            Pending
-          </span>
-        </div>
-      </div>
 
-      <div className="flex items-center gap-2 mt-4">
-        {account && !hasSigned && (
-          <button
-            onClick={handleSign}
-            disabled={loading}
-            className="flex items-center gap-2 px-4 py-2 bg-slate-900 dark:bg-slate-50 hover:bg-slate-800 dark:hover:bg-slate-200 text-slate-50 dark:text-slate-900 rounded-lg text-sm font-medium transition-colors"
-          >
-            <FileSignature className="w-4 h-4" />
-            Sign
-          </button>
-        )}
-
-        {hasSigned && (
-          <div className="flex items-center gap-2 px-4 py-2 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 rounded-lg text-sm font-medium">
-            <CheckCircle className="w-4 h-4" />
-            Signed
-          </div>
-        )}
-
-        {isExecutable && (
-          <button
-            onClick={handleExecute}
-            disabled={loading}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors shadow-sm shadow-blue-500/25"
-          >
-            <Send className="w-4 h-4" />
-            Execute
-          </button>
-        )}
-
-        {transaction.status === 'PENDING' && (
-          <button
-            onClick={handleDiscard}
-            disabled={loading}
-            className="flex items-center gap-2 px-4 py-2 bg-red-100 hover:bg-red-200 disabled:bg-red-50 text-red-700 rounded-lg text-sm font-medium transition-colors ml-auto"
-            title="Discard Transaction"
-          >
-            <Trash2 className="w-4 h-4" />
-            Discard
-          </button>
-        )}
-      </div>
-
-      {signatures.length > 0 && (
-        <div className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-700">
-          <div className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-2">
-            Signatures ({signatures.length}):
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {signatures.map((sig) => (
+        {/* Signature Progress */}
+        <div className="flex items-center gap-4">
+          <div className="text-right">
+            <div className="flex items-center gap-1 text-sm font-medium text-slate-900 dark:text-white">
+              <SignatureIcon className="w-4 h-4" />
+              {signatureCount}/{threshold}
+            </div>
+            <div className="w-24 h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden mt-1">
               <div
-                key={sig.id}
-                className="px-2 py-1 bg-slate-100 dark:bg-slate-700 rounded text-xs font-mono text-slate-700 dark:text-slate-300"
+                className={`h-full rounded-full transition-all ${isReady ? 'bg-green-500' : 'bg-blue-500'
+                  }`}
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="flex items-center gap-2">
+            {canSign && !isReady && (
+              <Button
+                size="sm"
+                onClick={onSign}
+                loading={isSigning}
+                icon={<SignatureIcon className="w-4 h-4" />}
               >
-                {formatAddress(sig.signer_address)}
-              </div>
-            ))}
+                Sign
+              </Button>
+            )}
+            {isReady && canExecute && (
+              <Button
+                size="sm"
+                variant="success"
+                onClick={onExecute}
+                loading={isExecuting}
+                icon={<Zap className="w-4 h-4" />}
+              >
+                Execute
+              </Button>
+            )}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onDiscard}
+              className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
+            >
+              Discard
+            </Button>
+          </div>
+
+          {/* Expand Toggle */}
+          <button
+            onClick={() => setExpanded(!expanded)}
+            className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+          >
+            {expanded ? (
+              <ChevronUp className="w-5 h-5 text-slate-400" />
+            ) : (
+              <ChevronDown className="w-5 h-5 text-slate-400" />
+            )}
+          </button>
+        </div>
+      </div>
+
+      {/* Expanded Details */}
+      {expanded && (
+        <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800 space-y-3">
+          {/* Transaction ID */}
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-slate-500 dark:text-slate-400">Transaction ID</span>
+            <code className="font-mono text-xs bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded">
+              {transaction.id.slice(0, 16)}...
+            </code>
+          </div>
+
+          {/* Created At */}
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-slate-500 dark:text-slate-400">Created</span>
+            <span className="text-slate-900 dark:text-white">
+              {new Date(transaction.created_at).toLocaleString()}
+            </span>
+          </div>
+
+          {/* Signatures */}
+          <div>
+            <p className="text-sm text-slate-500 dark:text-slate-400 mb-2">Signatures</p>
+            <div className="space-y-1">
+              {signatures.length === 0 ? (
+                <p className="text-sm text-slate-400 italic">No signatures yet</p>
+              ) : (
+                signatures.map((sig, i) => (
+                  <div
+                    key={sig.id}
+                    className="flex items-center gap-2 text-xs p-2 bg-slate-50 dark:bg-slate-800 rounded-lg"
+                  >
+                    <Check className="w-3 h-3 text-green-500" />
+                    <code className="font-mono flex-1 truncate">
+                      {sig.signer_address.slice(0, 16)}...{sig.signer_address.slice(-8)}
+                    </code>
+                  </div>
+                ))
+              )}
+            </div>
           </div>
         </div>
       )}
-    </div>
+    </Card>
   );
 }

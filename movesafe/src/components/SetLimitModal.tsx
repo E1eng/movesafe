@@ -1,186 +1,145 @@
 'use client';
 
-import { useState, useMemo } from 'react';
-import { X, AlertCircle } from 'lucide-react';
-import { createTransactionPayload } from '@/lib/multisig';
-import { useTransaction } from '@/hooks/useTransaction';
+import { useState } from 'react';
+import { Shield, AlertCircle, Wallet, Coins } from 'lucide-react';
+import { Modal, ModalFooter } from '@/components/ui/Modal';
+import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
+import { Badge } from '@/components/ui/Badge';
 import { validateAddress, validateAmount } from '@/lib/validateAddress';
 
 interface SetLimitModalProps {
   isOpen: boolean;
   onClose: () => void;
-  safeAddress: string;
-  creatorAddress: string;
-  contractAddress: string;
-  onSuccess: () => void;
+  onSubmit: (beneficiary: string, dailyLimit: string) => Promise<void>;
 }
 
-export function SetLimitModal({
-  isOpen,
-  onClose,
-  safeAddress,
-  creatorAddress,
-  contractAddress,
-  onSuccess,
-}: SetLimitModalProps) {
+export function SetLimitModal({ isOpen, onClose, onSubmit }: SetLimitModalProps) {
   const [beneficiary, setBeneficiary] = useState('');
   const [dailyLimit, setDailyLimit] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [beneficiaryError, setBeneficiaryError] = useState<string | null>(null);
 
-  // Real-time validation
-  const beneficiaryValidation = useMemo(() =>
-    beneficiary ? validateAddress(beneficiary) : { isValid: true },
-    [beneficiary]
-  );
-  const limitValidation = useMemo(() =>
-    dailyLimit ? validateAmount(dailyLimit) : { isValid: true },
-    [dailyLimit]
-  );
-
-  const { createTransaction, loading, error, setError } = useTransaction({
-    safeAddress,
-    creatorAddress,
-    onSuccess: () => {
-      setBeneficiary('');
-      setDailyLimit('');
-      onSuccess();
-      onClose();
+  const validateBeneficiary = (value: string) => {
+    setBeneficiary(value);
+    if (value) {
+      const result = validateAddress(value);
+      setBeneficiaryError(result.isValid ? null : result.error || 'Invalid address');
+    } else {
+      setBeneficiaryError(null);
     }
-  });
-
-  if (!isOpen) return null;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validate inputs locally
-    if (!beneficiaryValidation.isValid) {
-      setError(beneficiaryValidation.error || 'Invalid beneficiary address');
+    const beneficiaryValid = validateAddress(beneficiary);
+    if (!beneficiaryValid.isValid) {
+      setBeneficiaryError(beneficiaryValid.error || 'Invalid address');
       return;
     }
 
-    const limitInOctas = Math.floor(parseFloat(dailyLimit) * 100000000);
-    if (isNaN(limitInOctas) || limitInOctas <= 0) {
-      setError('Invalid daily limit amount');
+    if (!dailyLimit || parseFloat(dailyLimit) <= 0) {
+      setError('Please enter a valid daily limit');
       return;
     }
 
-    // Create the specific payload for spending limit approval
-    const payload = createTransactionPayload(
-      `${contractAddress}::spending_limit::approve_limit`,
-      [beneficiary.trim(), limitInOctas],
-      []
-    );
+    setLoading(true);
+    setError(null);
 
-    // Delegate transaction creation to the hook
-    await createTransaction({
-      customPayload: payload
-    });
+    try {
+      await onSubmit(beneficiary, dailyLimit);
+      setBeneficiary('');
+      setDailyLimit('');
+      onClose();
+    } catch (e: unknown) {
+      const err = e as Error;
+      setError(err?.message || 'Failed to set limit');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleClose = () => {
+    setBeneficiary('');
+    setDailyLimit('');
+    setError(null);
+    setBeneficiaryError(null);
+    onClose();
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 animate-in fade-in duration-200">
-      <div className="bg-white dark:bg-slate-800 rounded-xl shadow-xl max-w-md w-full mx-4 overflow-hidden ring-1 ring-slate-200 dark:ring-slate-700">
-        <div className="flex items-center justify-between p-6 border-b border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50">
-          <h2 className="text-xl font-bold text-slate-900 dark:text-slate-50">
-            Set Spending Limit
-          </h2>
-          <button
-            onClick={onClose}
-            className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg"
-          >
-            <X className="w-5 h-5" />
-          </button>
+    <Modal
+      isOpen={isOpen}
+      onClose={handleClose}
+      title="Set Spending Limit"
+      description="Allow an address to spend up to a daily limit without multisig"
+      size="md"
+    >
+      <form onSubmit={handleSubmit} className="space-y-5">
+        {/* Info Banner */}
+        <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl">
+          <div className="flex items-start gap-2">
+            <Shield className="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" />
+            <div className="text-sm text-blue-700 dark:text-blue-300">
+              <p className="font-medium mb-1">SafeGuard Feature</p>
+              <p className="text-blue-600 dark:text-blue-400">
+                The beneficiary can withdraw up to the daily limit without needing multisig approval.
+              </p>
+            </div>
+          </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-5">
-          <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg flex gap-3">
-            <AlertCircle className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0" />
-            <p className="text-sm text-blue-700 dark:text-blue-300">
-              This creates a multisig proposal. The beneficiary can instantly withdraw up to
-              their daily limit once approved by owners.
-            </p>
-          </div>
+        {/* Beneficiary */}
+        <Input
+          label="Beneficiary Address"
+          value={beneficiary}
+          onChange={(e) => validateBeneficiary(e.target.value)}
+          placeholder="0x..."
+          icon={<Wallet className="w-4 h-4" />}
+          error={beneficiaryError || undefined}
+          hint="Address that can spend within the limit"
+        />
 
-          <div className="space-y-2">
-            <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">
-              Beneficiary Address
-            </label>
-            <input
-              type="text"
-              value={beneficiary}
-              onChange={(e) => setBeneficiary(e.target.value)}
-              placeholder="0x..."
-              className="w-full px-4 py-2.5 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder:text-slate-400"
-              required
-            />
-          </div>
+        {/* Daily Limit */}
+        <Input
+          label="Daily Limit (MOVE)"
+          type="number"
+          value={dailyLimit}
+          onChange={(e) => setDailyLimit(e.target.value)}
+          placeholder="1.0"
+          step="0.1"
+          min="0"
+          icon={<Coins className="w-4 h-4" />}
+          iconRight={
+            <Badge variant="primary" size="sm">MOVE</Badge>
+          }
+          hint="Maximum amount per 24 hours"
+        />
 
-          <div className="space-y-2">
-            <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">
-              Daily Limit (MOVE)
-            </label>
-            <div className="relative">
-              <input
-                type="number"
-                step="0.00000001"
-                min="0"
-                value={dailyLimit}
-                onChange={(e) => setDailyLimit(e.target.value)}
-                placeholder="100.0"
-                className="w-full pl-4 pr-16 py-2.5 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder:text-slate-400"
-                required
-              />
-              <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none text-slate-500 dark:text-slate-400 text-sm font-medium">
-                MOVE
-              </div>
-            </div>
-            <p className="text-xs text-slate-500 dark:text-slate-400 flex justify-between">
-              <span>Max daily withdrawal amount</span>
-            </p>
+        {/* Error */}
+        {error && (
+          <div className="flex items-start gap-2 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl">
+            <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+            <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
           </div>
+        )}
 
-          {error && (
-            <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg flex gap-3 text-sm text-red-600 dark:text-red-400">
-              <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
-              <div className="flex-1">
-                <span className="font-semibold block mb-1">Proposal Failed</span>
-                {error}
-                <button
-                  type="button"
-                  onClick={() => setError(null)}
-                  className="block mt-2 text-xs underline hover:no-underline font-medium"
-                >
-                  Dismiss
-                </button>
-              </div>
-            </div>
-          )}
-
-          <div className="flex gap-3 pt-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 px-4 py-2.5 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-lg font-semibold transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="flex-1 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed text-white rounded-lg font-semibold transition-all shadow-sm hover:shadow active:scale-[0.98]"
-            >
-              {loading ? (
-                <div className="flex items-center justify-center gap-2">
-                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  Creating...
-                </div>
-              ) : (
-                'Create Proposal'
-              )}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+        <ModalFooter>
+          <Button type="button" variant="ghost" onClick={handleClose}>
+            Cancel
+          </Button>
+          <Button
+            type="submit"
+            loading={loading}
+            disabled={!!beneficiaryError || !beneficiary || !dailyLimit}
+            icon={<Shield className="w-4 h-4" />}
+          >
+            Set Limit
+          </Button>
+        </ModalFooter>
+      </form>
+    </Modal>
   );
 }

@@ -1,9 +1,9 @@
-/* Build timestamp: 2024-12-31-01:12 */
+/* Build timestamp: 2024-12-31-01:38 */
 @import "tailwindcss";
 
 :root {
   --background: #ffffff;
-  --foreground: #171717;
+  --foreground: #0f172a;
 }
 
 @theme inline {
@@ -15,31 +15,31 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #020617;
+    --foreground: #f1f5f9;
   }
 }
 
-/* Allow page-specific backgrounds to override */
-body {
-  color: var(--foreground);
-  font-family: var(--font-sans), system-ui, sans-serif;
-  min-height: 100vh;
-}
-
-/* Smooth scrolling */
-html {
-  scroll-behavior: smooth;
-}
-
-/* Remove default margins */
+/* Base Styles */
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
 
-/* Custom scrollbar */
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  color: var(--foreground);
+  font-family: var(--font-sans), system-ui, sans-serif;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Custom Scrollbar */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
@@ -60,15 +60,15 @@ html {
 
 @media (prefers-color-scheme: dark) {
   ::-webkit-scrollbar-thumb {
-    background: #475569;
+    background: #334155;
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    background: #64748b;
+    background: #475569;
   }
 }
 
-/* Animation utilities */
+/* Animations */
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -93,6 +93,42 @@ html {
   }
 }
 
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes gradient {
+
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
 @keyframes pulse-slow {
 
   0%,
@@ -105,10 +141,123 @@ html {
   }
 }
 
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+
+  100% {
+    transform: translateX(100%);
+  }
+}
+
 .animate-fade-in {
   animation: fadeIn 0.3s ease-out;
 }
 
 .animate-slide-in {
   animation: slideIn 0.3s ease-out;
+}
+
+.animate-slide-up {
+  animation: slideUp 0.4s ease-out;
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.2s ease-out;
+}
+
+.animate-gradient {
+  background-size: 200% 200%;
+  animation: gradient 3s ease infinite;
+}
+
+/* Utility Animations */
+.animate-in {
+  animation-duration: 150ms;
+  animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+  animation-fill-mode: forwards;
+}
+
+.fade-in {
+  animation-name: fadeIn;
+}
+
+.zoom-in-95 {
+  animation-name: scaleIn;
+}
+
+/* Glass Effect */
+.glass {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+@media (prefers-color-scheme: dark) {
+  .glass {
+    background: rgba(15, 23, 42, 0.8);
+  }
+}
+
+/* Selection */
+::selection {
+  background-color: #3b82f6;
+  color: white;
+}
+
+/* Focus Ring */
+.focus-ring {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
+}
+
+/* Gradient Text */
+.gradient-text {
+  background: linear-gradient(135deg, #3b82f6 0%, #06b6d4 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Loading Shimmer */
+.shimmer {
+  position: relative;
+  overflow: hidden;
+}
+
+.shimmer::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg,
+      transparent,
+      rgba(255, 255, 255, 0.2),
+      transparent);
+  animation: shimmer 1.5s infinite;
+}
+
+/* Delay utilities */
+.delay-100 {
+  animation-delay: 100ms;
+}
+
+.delay-200 {
+  animation-delay: 200ms;
+}
+
+.delay-300 {
+  animation-delay: 300ms;
+}
+
+.delay-500 {
+  animation-delay: 500ms;
+}
+
+.delay-1000 {
+  animation-delay: 1000ms;
 }

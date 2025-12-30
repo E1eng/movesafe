@@ -30,14 +30,9 @@ export default function RootLayout({
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen bg-slate-50 dark:bg-slate-950`}>
         <ToastProvider>
           <WalletProvider>
-            <div className="flex">
-              {/* Sidebar - hidden on mobile */}
-              <div className="hidden lg:block">
-                <Sidebar />
-              </div>
-
-              {/* Main Content */}
-              <main className="flex-1 lg:ml-64 min-h-screen transition-all duration-300">
+            <div className="min-h-screen lg:grid lg:grid-cols-[auto_1fr]">
+              <Sidebar />
+              <main className="min-w-0 p-4 lg:p-8 bg-slate-50 dark:bg-slate-950 transition-all duration-300">
                 {children}
               </main>
             </div>
