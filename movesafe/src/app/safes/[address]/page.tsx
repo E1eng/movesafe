@@ -511,7 +511,7 @@ export default function SafeDashboard() {
 
   if (!safe) {
     return (
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex items-center justify-center">
+      <div className="flex items-center justify-center min-h-[80vh]">
         <div className="text-center max-w-md mx-auto p-6">
           <div className="text-6xl mb-4">😔</div>
           <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-50 mb-4">
@@ -539,7 +539,7 @@ export default function SafeDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 py-8">
+    <div className="py-8">
       <div className="container mx-auto px-4 max-w-5xl">
         <button
           type="button"

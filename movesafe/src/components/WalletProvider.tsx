@@ -23,6 +23,10 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       dappConfig={{
         network: Network.TESTNET,
       }}
+      onError={(error) => {
+        // Ignore wallet fetch errors - they're usually network-related
+        console.warn('Wallet adapter error:', error);
+      }}
     >
       {children}
     </AptosWalletAdapterProvider>

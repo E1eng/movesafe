@@ -220,7 +220,7 @@ export default function DraftSafePage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 py-12">
+    <div className="py-12">
       <div className="container mx-auto px-4 max-w-3xl">
         <Link
           href="/safes"

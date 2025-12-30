@@ -51,7 +51,7 @@ export default function DraftsPage() {
   }, [connectedPubKey]);
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 py-12">
+    <div className="py-12">
       <div className="container mx-auto px-4 max-w-6xl">
         <div className="flex items-start justify-between gap-4 mb-8">
           <div>
@@ -110,8 +110,8 @@ export default function DraftsPage() {
 
               const href = hasAdminToken
                 ? `/draft/${d.id}?admin=${encodeURIComponent(
-                    JSON.parse(localStorage.getItem('movesafe_draft_admin_tokens') || '{}')[d.id]
-                  )}`
+                  JSON.parse(localStorage.getItem('movesafe_draft_admin_tokens') || '{}')[d.id]
+                )}`
                 : `/draft/${d.id}`;
 
               return (

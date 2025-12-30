@@ -3,7 +3,7 @@ import { Shield, Plus, Wallet, ArrowRight, Lock, Users, Zap } from 'lucide-react
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 pt-16">
+    <div>
       {/* Hero Section */}
       <div className="container mx-auto px-4 py-20">
         <div className="flex flex-col items-center justify-center text-center max-w-4xl mx-auto">

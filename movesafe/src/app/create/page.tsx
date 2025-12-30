@@ -12,7 +12,7 @@ export default function CreateSafePage() {
   const DEBUG = process.env.NEXT_PUBLIC_DEBUG_MODE === 'true';
   const router = useRouter();
   const { account } = useWallet();
-  
+
   const [safeName, setSafeName] = useState('');
   const [threshold, setThreshold] = useState(2);
   const [ownerLimit, setOwnerLimit] = useState(2);
@@ -111,7 +111,7 @@ export default function CreateSafePage() {
 
       const validOwners = owners.filter(o => o.trim() !== '');
       const normalizedOwners = validOwners.map(normalizeHex).filter(Boolean);
-      
+
       if (validOwners.length < threshold) {
         throw new Error(`Threshold (${threshold}) cannot exceed number of owners (${validOwners.length})`);
       }
@@ -138,7 +138,7 @@ export default function CreateSafePage() {
       if (existingSafe) {
         if (DEBUG) console.log('⚠️ Safe already exists, redirecting to it');
         alert(`ℹ️ Safe Already Exists\n\nA safe with these owners and threshold already exists.\n\nRedirecting you to the existing safe: "${existingSafe.name}"`);
-        
+
         // Save to localStorage
         const storedSafes = JSON.parse(localStorage.getItem('movesafe_safes') || '[]');
         const alreadyStored = storedSafes.find((s: any) => s.address === safeAddress);
@@ -191,7 +191,7 @@ export default function CreateSafePage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 py-12">
+    <div className="py-12">
       <div className="container mx-auto px-4 max-w-2xl">
         <Link
           href="/safes"
@@ -214,22 +214,20 @@ export default function CreateSafePage() {
               <button
                 type="button"
                 onClick={() => setMode('invite')}
-                className={`px-4 py-2 rounded-lg font-medium border ${
-                  mode === 'invite'
-                    ? 'bg-blue-600 text-white border-blue-600'
-                    : 'bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 border-slate-300 dark:border-slate-600'
-                }`}
+                className={`px-4 py-2 rounded-lg font-medium border ${mode === 'invite'
+                  ? 'bg-blue-600 text-white border-blue-600'
+                  : 'bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 border-slate-300 dark:border-slate-600'
+                  }`}
               >
                 Connect to Join
               </button>
               <button
                 type="button"
                 onClick={() => setMode('manual')}
-                className={`px-4 py-2 rounded-lg font-medium border ${
-                  mode === 'manual'
-                    ? 'bg-blue-600 text-white border-blue-600'
-                    : 'bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 border-slate-300 dark:border-slate-600'
-                }`}
+                className={`px-4 py-2 rounded-lg font-medium border ${mode === 'manual'
+                  ? 'bg-blue-600 text-white border-blue-600'
+                  : 'bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 border-slate-300 dark:border-slate-600'
+                  }`}
               >
                 Manual Owners
               </button>
@@ -287,45 +285,45 @@ export default function CreateSafePage() {
 
             {mode === 'manual' && (
               <div>
-              <div className="flex items-center justify-between mb-2">
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
-                  Owner Public Keys
-                </label>
-                <button
-                  type="button"
-                  onClick={addOwner}
-                  className="flex items-center gap-1 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
-                >
-                  <Plus className="w-4 h-4" />
-                  Add Owner
-                </button>
-              </div>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+                    Owner Public Keys
+                  </label>
+                  <button
+                    type="button"
+                    onClick={addOwner}
+                    className="flex items-center gap-1 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Add Owner
+                  </button>
+                </div>
 
-              <div className="space-y-3">
-                {owners.map((owner, index) => (
-                  <div key={index} className="flex gap-2">
-                    <input
-                      type="text"
-                      value={owner}
-                      onChange={(e) => updateOwner(index, e.target.value)}
-                      placeholder="0x... (Public Key)"
-                      className="flex-1 px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                    {owners.length > 1 && (
-                      <button
-                        type="button"
-                        onClick={() => removeOwner(index)}
-                        className="px-3 py-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-                      >
-                        <Trash2 className="w-5 h-5" />
-                      </button>
-                    )}
-                  </div>
-                ))}
-              </div>
-              <p className="text-sm text-slate-500 dark:text-slate-400 mt-2">
-                Add the public keys (hex format) of all owners who can sign transactions
-              </p>
+                <div className="space-y-3">
+                  {owners.map((owner, index) => (
+                    <div key={index} className="flex gap-2">
+                      <input
+                        type="text"
+                        value={owner}
+                        onChange={(e) => updateOwner(index, e.target.value)}
+                        placeholder="0x... (Public Key)"
+                        className="flex-1 px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      />
+                      {owners.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => removeOwner(index)}
+                          className="px-3 py-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                        >
+                          <Trash2 className="w-5 h-5" />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                <p className="text-sm text-slate-500 dark:text-slate-400 mt-2">
+                  Add the public keys (hex format) of all owners who can sign transactions
+                </p>
               </div>
             )}
 
