@@ -282,7 +282,24 @@ export default function SafeDashboard() {
         title: 'Signature recorded',
         description: 'Your approval has been saved for this transaction.',
       });
+
+      // Reload data to get updated signature count
       await loadSafeData();
+
+      // Check if threshold is now met - auto-execute if so
+      const signedTx = transactions.find((tx) => tx.id === txId);
+      const txSignatures = signatures[txId] || [];
+      const newSignatureCount = txSignatures.length + 1; // +1 for the one we just added
+
+      if (signedTx && safe && newSignatureCount >= safe.threshold) {
+        toast({
+          variant: 'info',
+          title: 'Threshold reached!',
+          description: 'Auto-executing transaction...',
+        });
+        // Small delay to let user see the message
+        setTimeout(() => handleExecuteTransaction(txId), 1500);
+      }
     } catch (err: unknown) {
       console.error('Sign transaction error:', err);
       const msg = err instanceof Error ? err.message : String(err);
