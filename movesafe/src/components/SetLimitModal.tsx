@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { X, AlertCircle } from 'lucide-react';
 import { createTransactionPayload } from '@/lib/multisig';
 import { useTransaction } from '@/hooks/useTransaction';
+import { validateAddress, validateAmount } from '@/lib/validateAddress';
 
 interface SetLimitModalProps {
   isOpen: boolean;
@@ -25,6 +26,16 @@ export function SetLimitModal({
   const [beneficiary, setBeneficiary] = useState('');
   const [dailyLimit, setDailyLimit] = useState('');
 
+  // Real-time validation
+  const beneficiaryValidation = useMemo(() =>
+    beneficiary ? validateAddress(beneficiary) : { isValid: true },
+    [beneficiary]
+  );
+  const limitValidation = useMemo(() =>
+    dailyLimit ? validateAmount(dailyLimit) : { isValid: true },
+    [dailyLimit]
+  );
+
   const { createTransaction, loading, error, setError } = useTransaction({
     safeAddress,
     creatorAddress,
@@ -42,8 +53,8 @@ export function SetLimitModal({
     e.preventDefault();
 
     // Validate inputs locally
-    if (!beneficiary.trim()) {
-      setError('Beneficiary address is required');
+    if (!beneficiaryValidation.isValid) {
+      setError(beneficiaryValidation.error || 'Invalid beneficiary address');
       return;
     }
 

@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { X, AlertCircle } from 'lucide-react';
 import { useTransaction } from '@/hooks/useTransaction';
+import { validateAddress, validateAmount } from '@/lib/validateAddress';
 
 interface NewTransactionModalProps {
   isOpen: boolean;
@@ -22,6 +23,17 @@ export function NewTransactionModal({
   const [recipient, setRecipient] = useState('');
   const [amount, setAmount] = useState('');
 
+  // Real-time validation
+  const recipientValidation = useMemo(() =>
+    recipient ? validateAddress(recipient) : { isValid: true },
+    [recipient]
+  );
+  const amountValidation = useMemo(() =>
+    amount ? validateAmount(amount) : { isValid: true },
+    [amount]
+  );
+  const isFormValid = recipientValidation.isValid && amountValidation.isValid && recipient && amount;
+
   const { createTransaction, loading, error, setError } = useTransaction({
     safeAddress,
     creatorAddress,
@@ -37,7 +49,18 @@ export function NewTransactionModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await createTransaction({ recipient, amount });
+
+    // Final validation before submit
+    if (!recipientValidation.isValid) {
+      setError(recipientValidation.error || 'Invalid recipient address');
+      return;
+    }
+    if (!amountValidation.isValid) {
+      setError(amountValidation.error || 'Invalid amount');
+      return;
+    }
+
+    await createTransaction({ recipient: recipientValidation.normalized || recipient, amount });
   };
 
   return (
@@ -65,9 +88,15 @@ export function NewTransactionModal({
               value={recipient}
               onChange={(e) => setRecipient(e.target.value)}
               placeholder="0x..."
-              className="w-full px-4 py-2.5 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder:text-slate-400"
+              className={`w-full px-4 py-2.5 border rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder:text-slate-400 ${recipient && !recipientValidation.isValid
+                  ? 'border-red-500 dark:border-red-500'
+                  : 'border-slate-300 dark:border-slate-600'
+                }`}
               required
             />
+            {recipient && !recipientValidation.isValid && (
+              <p className="text-xs text-red-500 mt-1">{recipientValidation.error}</p>
+            )}
           </div>
 
           <div className="space-y-2">

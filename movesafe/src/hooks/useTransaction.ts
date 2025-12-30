@@ -105,8 +105,9 @@ export function useTransaction({ safeAddress, creatorAddress, onSuccess }: UseTr
 
       // 6. Estimate Gas with reasonable buffer and cap
       // Using smaller buffer (1.1x) and capping maxGas to prevent INSUFFICIENT_BALANCE errors
-      const rawMaxGas = Number((previewTxn as any).rawTransaction?.max_gas_amount) || 5000;
-      const rawGasPrice = Number((previewTxn as any).rawTransaction?.gas_unit_price) || 100;
+      const txnWithRaw = previewTxn as unknown as { rawTransaction?: { max_gas_amount?: bigint; gas_unit_price?: bigint } };
+      const rawMaxGas = Number(txnWithRaw.rawTransaction?.max_gas_amount ?? BigInt(5000));
+      const rawGasPrice = Number(txnWithRaw.rawTransaction?.gas_unit_price ?? BigInt(100));
 
       // Cap max gas at 50000 (0.005 MOVE at price 100) to keep fees reasonable
       const gasUnitPrice = Math.max(100, Math.ceil(rawGasPrice * 1.1));
