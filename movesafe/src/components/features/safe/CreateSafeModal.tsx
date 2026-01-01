@@ -45,7 +45,7 @@ export function CreateSafeModal({ isOpen, onClose }: CreateSafeModalProps) {
                 name,
                 threshold,
                 owner_limit: ownerLimit,
-                owners: [connectedPubKey], // Creator joins automatically
+                owners: [connectedPubKey], // Using PUBLIC KEY for multisig
                 created_by_pubkey: connectedPubKey,
                 join_token: joinToken,
                 admin_token: adminToken,
@@ -134,8 +134,8 @@ export function CreateSafeModal({ isOpen, onClose }: CreateSafeModalProps) {
                         <button
                             onClick={() => setMode('invite')}
                             className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-medium transition-all ${mode === 'invite'
-                                    ? 'bg-white text-black'
-                                    : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'
+                                ? 'bg-white text-black'
+                                : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'
                                 }`}
                         >
                             <UserPlus className="w-4 h-4" />
@@ -144,8 +144,8 @@ export function CreateSafeModal({ isOpen, onClose }: CreateSafeModalProps) {
                         <button
                             onClick={() => setMode('manual')}
                             className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-medium transition-all ${mode === 'manual'
-                                    ? 'bg-white text-black'
-                                    : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'
+                                ? 'bg-white text-black'
+                                : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'
                                 }`}
                         >
                             <Edit3 className="w-4 h-4" />

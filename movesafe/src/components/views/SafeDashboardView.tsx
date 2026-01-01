@@ -13,6 +13,7 @@ import { useWallet } from '@aptos-labs/wallet-adapter-react';
 import { aptos } from '@/lib/movement';
 import { toast } from 'sonner';
 import { assembleMultiSigAuthenticator, SignatureData } from '@/lib/multisig';
+import { Ed25519PublicKey } from '@aptos-labs/ts-sdk';
 
 // Extending Transaction to include signatures for the UI
 interface ExtendedTransaction extends Transaction {
@@ -24,13 +25,14 @@ interface SafeDashboardViewProps {
     onBack: () => void;
 }
 
-type Tab = 'queue' | 'assets' | 'signers' | 'settings';
+type Tab = 'queue' | 'history' | 'assets' | 'signers' | 'settings';
 
 export function SafeDashboardView({ safeAddress, onBack }: SafeDashboardViewProps) {
     const { account, signTransaction } = useWallet();
     const [activeTab, setActiveTab] = useState<Tab>('queue');
     const [safe, setSafe] = useState<Safe | null>(null);
     const [transactions, setTransactions] = useState<ExtendedTransaction[]>([]);
+    const [history, setHistory] = useState<ExtendedTransaction[]>([]);
     const [balance, setBalance] = useState<number>(0);
     const [loading, setLoading] = useState(true);
     const [isTxModalOpen, setIsTxModalOpen] = useState(false);
@@ -55,6 +57,17 @@ export function SafeDashboardView({ safeAddress, onBack }: SafeDashboardViewProp
                 .order('created_at', { ascending: false });
 
             setTransactions(txData as ExtendedTransaction[] || []);
+
+            // 3. Fetch History (Executed Transactions)
+            const { data: historyData } = await supabase
+                .from('transactions')
+                .select('*, signatures(*)')
+                .eq('safe_address', safeAddress)
+                .eq('status', 'EXECUTED')
+                .order('executed_at', { ascending: false })
+                .limit(50);
+
+            setHistory(historyData as ExtendedTransaction[] || []);
 
             // 3. Fetch Balance (APT)
             try {
@@ -108,14 +121,29 @@ export function SafeDashboardView({ safeAddress, onBack }: SafeDashboardViewProp
                 options: {
                     accountSequenceNumber: tx.sequence_number,
                     expireTimestamp: parseInt(payload.txOptions?.expireTimestamp || (Math.floor(Date.now() / 1000) + 3600).toString()),
-                    maxGasAmount: parseInt(payload.txOptions?.maxGasAmount || '50000'),
+                    maxGasAmount: parseInt(payload.txOptions?.maxGasAmount || '2000'),
                     gasUnitPrice: parseInt(payload.txOptions?.gasUnitPrice || '100'),
                 }
             });
 
             const senderAuthenticator = await signTransaction({ transactionOrPayload: buildTx });
-            // @ts-ignore
-            const sigHex = senderAuthenticator.signature.toString();
+
+            // Extract signature from authenticator - handle different possible structures
+            let sigHex: string;
+            const auth = senderAuthenticator as any;
+
+            if (auth?.authenticator?.signature) {
+                sigHex = auth.authenticator.signature.toString();
+            } else if (auth?.signature) {
+                sigHex = auth.signature.toString();
+            } else if (auth?.bcs) {
+                // If BCS serialized, convert to hex
+                sigHex = Buffer.from(auth.bcs).toString('hex');
+            } else {
+                // Last resort: stringify the whole thing
+                console.log('senderAuthenticator structure:', JSON.stringify(auth, null, 2));
+                throw new Error('Could not extract signature from wallet response');
+            }
 
             const { error } = await supabase.from('signatures').insert({
                 transaction_id: tx.id,
@@ -153,7 +181,7 @@ export function SafeDashboardView({ safeAddress, onBack }: SafeDashboardViewProp
                 options: {
                     accountSequenceNumber: tx.sequence_number,
                     expireTimestamp: parseInt(payload.txOptions?.expireTimestamp || (Math.floor(Date.now() / 1000) + 3600).toString()),
-                    maxGasAmount: parseInt(payload.txOptions?.maxGasAmount || '50000'),
+                    maxGasAmount: parseInt(payload.txOptions?.maxGasAmount || '2000'),
                     gasUnitPrice: parseInt(payload.txOptions?.gasUnitPrice || '100'),
                 }
             });
@@ -226,6 +254,7 @@ export function SafeDashboardView({ safeAddress, onBack }: SafeDashboardViewProp
                 {/* Navigation */}
                 <div className="flex-1 space-y-1">
                     <NavItem id="queue" label="Queue" icon={History} />
+                    <NavItem id="history" label="History" icon={CheckCircle2} />
                     <NavItem id="assets" label="Assets" icon={Coins} />
                     <NavItem id="signers" label="Signers" icon={Users} />
                     {/* <NavItem id="settings" label="Settings" icon={Settings} /> */}
@@ -286,7 +315,18 @@ export function SafeDashboardView({ safeAddress, onBack }: SafeDashboardViewProp
                                     transactions.map(tx => {
                                         const userAddress = account?.address?.toString()?.toLowerCase();
                                         const hasSigned = tx.signatures?.some((s: any) => s.signer_address.toLowerCase() === userAddress);
-                                        const isOwner = safe.owners.some(o => o.toLowerCase() === userAddress);
+
+                                        // Derive addresses from owner public keys for comparison
+                                        const isOwner = safe.owners.some(ownerPubKey => {
+                                            try {
+                                                const cleanPubKey = ownerPubKey.startsWith('0x') ? ownerPubKey.slice(2) : ownerPubKey;
+                                                const pubKey = new Ed25519PublicKey(cleanPubKey);
+                                                const derivedAddress = pubKey.authKey().derivedAddress().toString().toLowerCase();
+                                                return derivedAddress === userAddress;
+                                            } catch {
+                                                return false;
+                                            }
+                                        });
 
                                         return (
                                             <TransactionQueueItem
@@ -302,6 +342,72 @@ export function SafeDashboardView({ safeAddress, onBack }: SafeDashboardViewProp
                                                 signingTxId={signingTxId}
                                                 executingTxId={executingTxId}
                                             />
+                                        );
+                                    })
+                                )}
+                            </motion.div>
+                        )}
+
+                        {activeTab === 'history' && (
+                            <motion.div
+                                key="history"
+                                initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
+                                className="space-y-4 max-w-3xl"
+                            >
+                                <h3 className="text-lg font-semibold mb-4">Transaction History</h3>
+
+                                {history.length === 0 ? (
+                                    <div className="flex flex-col items-center justify-center py-20 border border-dashed border-zinc-800 rounded-3xl bg-zinc-900/20">
+                                        <CheckCircle2 className="w-12 h-12 text-zinc-700 mb-3" />
+                                        <p className="text-zinc-600 text-sm">No executed transactions yet</p>
+                                    </div>
+                                ) : (
+                                    history.map(tx => {
+                                        const getTransferDetails = () => {
+                                            const args = tx.payload.functionArguments;
+                                            if (args && args.length >= 2) {
+                                                return {
+                                                    recipient: String(args[0]),
+                                                    amount: String(args[1])
+                                                };
+                                            }
+                                            return { recipient: 'Unknown', amount: '0' };
+                                        };
+                                        const { recipient, amount } = getTransferDetails();
+                                        const formatAmount = (octas: string) => {
+                                            const num = parseFloat(octas) / 100000000;
+                                            return num.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 8 });
+                                        };
+
+                                        return (
+                                            <div key={tx.id} className="p-4 rounded-2xl bg-zinc-900/50 border border-zinc-800 flex items-center gap-4">
+                                                <div className="w-10 h-10 rounded-xl bg-green-500/10 border border-green-500/20 flex items-center justify-center">
+                                                    <CheckCircle2 className="w-5 h-5 text-green-400" />
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="font-medium text-white">
+                                                        Sent {formatAmount(amount)} MOVE
+                                                    </div>
+                                                    <div className="text-xs text-zinc-500 flex items-center gap-2">
+                                                        To: <code className="font-mono bg-zinc-800 px-1 py-0.5 rounded">{recipient.slice(0, 8)}...{recipient.slice(-6)}</code>
+                                                    </div>
+                                                </div>
+                                                <div className="text-right">
+                                                    <div className="text-xs text-zinc-500">
+                                                        {tx.executed_at ? new Date(tx.executed_at).toLocaleDateString() : 'N/A'}
+                                                    </div>
+                                                    {tx.tx_hash && (
+                                                        <a
+                                                            href={`https://explorer.movementnetwork.xyz/txn/${tx.tx_hash}?network=bardock+testnet`}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="text-xs text-blue-400 hover:underline"
+                                                        >
+                                                            View →
+                                                        </a>
+                                                    )}
+                                                </div>
+                                            </div>
                                         );
                                     })
                                 )}
@@ -337,23 +443,35 @@ export function SafeDashboardView({ safeAddress, onBack }: SafeDashboardViewProp
                             >
                                 <h3 className="text-lg font-semibold mb-4">Safe Owners</h3>
                                 <div className="grid gap-3">
-                                    {safe.owners.map((owner, i) => (
-                                        <div key={i} className="flex items-center gap-4 p-4 rounded-xl bg-zinc-900/50 border border-zinc-800/50">
-                                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-zinc-800 to-zinc-700 flex items-center justify-center font-bold text-zinc-400">
-                                                {i + 1}
+                                    {safe.owners.map((ownerPubKey, i) => {
+                                        // Derive address from public key for display
+                                        let displayAddress = ownerPubKey;
+                                        try {
+                                            const cleanPubKey = ownerPubKey.startsWith('0x') ? ownerPubKey.slice(2) : ownerPubKey;
+                                            const pubKey = new Ed25519PublicKey(cleanPubKey);
+                                            displayAddress = pubKey.authKey().derivedAddress().toString();
+                                        } catch {
+                                            // If derivation fails, show the original value
+                                        }
+
+                                        return (
+                                            <div key={i} className="flex items-center gap-4 p-4 rounded-xl bg-zinc-900/50 border border-zinc-800/50">
+                                                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-zinc-800 to-zinc-700 flex items-center justify-center font-bold text-zinc-400">
+                                                    {i + 1}
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="font-mono text-sm text-zinc-300 truncate">{displayAddress}</div>
+                                                    <div className="text-xs text-zinc-600 mt-0.5">Owner</div>
+                                                </div>
+                                                <button
+                                                    onClick={() => { navigator.clipboard.writeText(displayAddress); toast.success("Copied"); }}
+                                                    className="p-2 hover:bg-zinc-800 rounded-lg text-zinc-500"
+                                                >
+                                                    <Copy className="w-4 h-4" />
+                                                </button>
                                             </div>
-                                            <div className="flex-1 min-w-0">
-                                                <div className="font-mono text-sm text-zinc-300 truncate">{owner}</div>
-                                                <div className="text-xs text-zinc-600 mt-0.5">Owner</div>
-                                            </div>
-                                            <button
-                                                onClick={() => { navigator.clipboard.writeText(owner); toast.success("Copied"); }}
-                                                className="p-2 hover:bg-zinc-800 rounded-lg text-zinc-500"
-                                            >
-                                                <Copy className="w-4 h-4" />
-                                            </button>
-                                        </div>
-                                    ))}
+                                        );
+                                    })}
                                 </div>
                             </motion.div>
                         )}
