@@ -1,34 +1,50 @@
 'use client';
 
 import { useState } from 'react';
-import { Send, AlertCircle, Wallet, Coins } from 'lucide-react';
+import { Send, AlertCircle, Wallet, Coins, Loader2 } from 'lucide-react';
+import { useWallet } from '@aptos-labs/wallet-adapter-react';
 import { Modal, ModalFooter } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Badge } from '@/components/ui/Badge';
 import { validateAddress, validateAmount } from '@/lib/validateAddress';
+import { useTransaction } from '@/hooks/useTransaction';
 
 interface NewTransactionModalProps {
   isOpen: boolean;
   onClose: () => void;
   safeAddress: string;
-  onSubmit: (recipient: string, amount: string) => Promise<void>;
+  safeThreshold: number;
+  safeOwners: string[];
+  onTransactionCreated: () => void;
 }
 
 export function NewTransactionModal({
   isOpen,
   onClose,
   safeAddress,
-  onSubmit,
+  safeThreshold,
+  safeOwners,
+  onTransactionCreated,
 }: NewTransactionModalProps) {
+  const { account } = useWallet();
   const [recipient, setRecipient] = useState('');
   const [amount, setAmount] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   // Validation states
   const [recipientError, setRecipientError] = useState<string | null>(null);
   const [amountError, setAmountError] = useState<string | null>(null);
+
+  const { createTransaction, loading, error, setError } = useTransaction({
+    safeAddress,
+    creatorAddress: account?.address?.toString() || '',
+    onSuccess: () => {
+      setRecipient('');
+      setAmount('');
+      onTransactionCreated();
+      onClose();
+    }
+  });
 
   const validateRecipient = (value: string) => {
     setRecipient(value);
@@ -52,8 +68,6 @@ export function NewTransactionModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    // Final validation
     const recipientValid = validateAddress(recipient);
     const amountValid = validateAmount(amount);
 
@@ -66,21 +80,7 @@ export function NewTransactionModal({
       return;
     }
 
-    setLoading(true);
-    setError(null);
-
-    try {
-      await onSubmit(recipient, amount);
-      // Reset form
-      setRecipient('');
-      setAmount('');
-      onClose();
-    } catch (e: unknown) {
-      const err = e as Error;
-      setError(err?.message || 'Failed to create transaction');
-    } finally {
-      setLoading(false);
-    }
+    await createTransaction({ recipient, amount });
   };
 
   const handleClose = () => {
@@ -101,7 +101,6 @@ export function NewTransactionModal({
       size="md"
     >
       <form onSubmit={handleSubmit} className="space-y-5">
-        {/* Recipient */}
         <Input
           label="Recipient Address"
           value={recipient}
@@ -112,7 +111,6 @@ export function NewTransactionModal({
           hint="The address that will receive the funds"
         />
 
-        {/* Amount */}
         <Input
           label="Amount (MOVE)"
           type="number"
@@ -123,12 +121,9 @@ export function NewTransactionModal({
           min="0"
           icon={<Coins className="w-4 h-4" />}
           error={amountError || undefined}
-          iconRight={
-            <Badge variant="primary" size="sm">MOVE</Badge>
-          }
+          iconRight={<Badge variant="primary" size="sm">MOVE</Badge>}
         />
 
-        {/* Error Message */}
         {error && (
           <div className="flex items-start gap-2 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl">
             <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />

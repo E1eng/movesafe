@@ -1,15 +1,14 @@
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
-import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useWallet } from '@aptos-labs/wallet-adapter-react';
-import { FileText, Users, ChevronRight, Wallet, Plus } from 'lucide-react';
+import { FileText, Users, ChevronRight, ArrowLeft, Plus, Loader2 } from 'lucide-react';
 import { supabase, SafeDraft } from '@/lib/supabase';
-import { Button } from '@/components/ui/Button';
-import { Card } from '@/components/ui/Card';
-import { Badge } from '@/components/ui/Badge';
+import { motion } from 'framer-motion';
 
 export default function DraftsPage() {
+  const router = useRouter();
   const { connected, account } = useWallet();
   const [drafts, setDrafts] = useState<SafeDraft[]>([]);
   const [loading, setLoading] = useState(true);
@@ -20,6 +19,11 @@ export default function DraftsPage() {
   }, [account?.publicKey]);
 
   useEffect(() => {
+    if (!connected) {
+      router.push('/');
+      return;
+    }
+
     const loadDrafts = async () => {
       if (!connectedPubKey) {
         setDrafts([]);
@@ -36,7 +40,6 @@ export default function DraftsPage() {
 
         if (error) throw error;
 
-        // Filter drafts where connected wallet is an owner
         const myDrafts = (data as SafeDraft[]).filter((d) =>
           d.owners?.some((o) => String(o).toLowerCase() === connectedPubKey)
         );
@@ -50,127 +53,113 @@ export default function DraftsPage() {
     };
 
     void loadDrafts();
-  }, [connectedPubKey]);
+  }, [connectedPubKey, connected, router]);
 
-  // Not connected
-  if (!connected) {
-    return (
-      <div className="min-h-[80vh] flex items-center justify-center p-4">
-        <Card variant="glass" className="max-w-md w-full text-center">
-          <div className="w-16 h-16 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-blue-100 to-blue-200 dark:from-blue-900/50 dark:to-blue-800/50 flex items-center justify-center">
-            <Wallet className="w-8 h-8 text-blue-600 dark:text-blue-400" />
-          </div>
-          <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">
-            Connect Your Wallet
-          </h2>
-          <p className="text-slate-600 dark:text-slate-400 mb-6">
-            Connect your wallet to view your draft safes.
-          </p>
-        </Card>
-      </div>
-    );
-  }
+  const container = {
+    hidden: { opacity: 0 },
+    show: { opacity: 1, transition: { staggerChildren: 0.1 } }
+  };
+
+  const item = {
+    hidden: { y: 20, opacity: 0 },
+    show: { y: 0, opacity: 1 }
+  };
 
   return (
-    <div className="p-6 lg:p-8">
+    <div className="h-full flex flex-col p-8 bg-black text-white relative overflow-hidden">
+      {/* Background Decor */}
+      <div className="absolute top-[-20%] right-[-20%] w-[500px] h-[500px] bg-amber-900/10 rounded-full blur-[100px] pointer-events-none" />
+
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">
-            Drafts
-          </h1>
-          <p className="text-slate-600 dark:text-slate-400">
-            Invitation-based safes waiting to be finalized
-          </p>
-        </div>
-        <Link href="/create">
-          <Button icon={<Plus className="w-5 h-5" />}>
-            Create New Draft
-          </Button>
-        </Link>
+      <div className="relative z-10 mb-8">
+        <button
+          onClick={() => router.push('/select')}
+          className="flex items-center gap-2 text-zinc-500 hover:text-white transition-colors mb-6 group"
+        >
+          <div className="w-8 h-8 rounded-full bg-zinc-900 flex items-center justify-center group-hover:bg-zinc-800">
+            <ArrowLeft className="w-4 h-4" />
+          </div>
+          <span className="text-sm font-medium">Back to Safes</span>
+        </button>
+
+        <h1 className="text-3xl font-bold mb-2">Pending Drafts</h1>
+        <p className="text-zinc-400">Safes waiting for co-signers to join</p>
       </div>
 
-      {/* Loading */}
-      {loading && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {[1, 2].map((i) => (
-            <Card key={i} className="animate-pulse">
-              <div className="h-6 w-2/3 bg-slate-200 dark:bg-slate-700 rounded mb-3" />
-              <div className="h-4 w-full bg-slate-100 dark:bg-slate-800 rounded mb-4" />
-              <div className="flex gap-2">
-                <div className="h-6 w-16 bg-slate-100 dark:bg-slate-800 rounded-full" />
-              </div>
-            </Card>
-          ))}
+      {/* Content */}
+      {loading ? (
+        <div className="flex-1 flex items-center justify-center">
+          <Loader2 className="w-8 h-8 text-zinc-500 animate-spin" />
         </div>
-      )}
-
-      {/* Empty State */}
-      {!loading && drafts.length === 0 && (
-        <Card variant="outline" className="text-center py-16">
-          <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-700 flex items-center justify-center">
-            <FileText className="w-10 h-10 text-slate-400" />
+      ) : drafts.length === 0 ? (
+        <div className="flex-1 flex flex-col items-center justify-center text-center">
+          <div className="w-16 h-16 rounded-3xl bg-zinc-900 border border-zinc-800 flex items-center justify-center mb-4">
+            <FileText className="w-8 h-8 text-zinc-600" />
           </div>
-          <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-2">
-            No Drafts Found
-          </h3>
-          <p className="text-slate-600 dark:text-slate-400 mb-6 max-w-sm mx-auto">
-            Create a new safe with &quot;Invite to Join&quot; mode to create a shareable draft.
+          <h3 className="text-xl font-bold mb-2">No Pending Drafts</h3>
+          <p className="text-zinc-500 max-w-xs mb-6">
+            Create a new safe with "Invite" mode to generate a shareable invite link.
           </p>
-          <Link href="/create">
-            <Button icon={<Plus className="w-5 h-5" />}>
-              Create Draft Safe
-            </Button>
-          </Link>
-        </Card>
-      )}
-
-      {/* Drafts Grid */}
-      {!loading && drafts.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {drafts.map((draft) => (
-            <Link key={draft.id} href={`/draft/${draft.id}`}>
-              <Card hover className="group h-full">
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center shadow-lg shadow-amber-500/20">
-                      <FileText className="w-5 h-5 text-white" />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                        {draft.name || 'Unnamed Draft'}
-                      </h3>
-                      <Badge variant="warning" size="sm" className="mt-1">
-                        Draft
-                      </Badge>
-                    </div>
-                  </div>
-                  <ChevronRight className="w-5 h-5 text-slate-400 group-hover:text-blue-500 group-hover:translate-x-1 transition-all" />
-                </div>
-
-                <div className="flex flex-wrap gap-2">
-                  <Badge variant="default" size="sm">
-                    <Users className="w-3 h-3" />
-                    {draft.owners?.length || 0}/{draft.owner_limit} joined
-                  </Badge>
-                  <Badge variant="primary" size="sm">
-                    {draft.threshold} signatures
-                  </Badge>
-                </div>
-
-                {/* Progress */}
-                <div className="mt-4">
-                  <div className="h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-gradient-to-r from-amber-500 to-orange-500 rounded-full transition-all"
-                      style={{ width: `${((draft.owners?.length || 0) / draft.owner_limit) * 100}%` }}
-                    />
-                  </div>
-                </div>
-              </Card>
-            </Link>
-          ))}
+          <button
+            onClick={() => router.push('/select')}
+            className="px-6 py-3 bg-white text-black font-bold rounded-xl hover:bg-zinc-200 transition-colors"
+          >
+            Go Back
+          </button>
         </div>
+      ) : (
+        <motion.div
+          variants={container}
+          initial="hidden"
+          animate="show"
+          className="grid grid-cols-1 md:grid-cols-2 gap-4 overflow-y-auto"
+        >
+          {drafts.map((draft) => (
+            <motion.button
+              key={draft.id}
+              variants={item}
+              whileHover={{ scale: 1.02, y: -2 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => router.push(`/draft/${draft.id}`)}
+              className="group p-5 rounded-3xl bg-zinc-900/50 border border-zinc-800 hover:bg-zinc-900 hover:border-zinc-700 transition-all text-left flex flex-col gap-4"
+            >
+              <div className="flex items-start justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-500/20 to-orange-500/20 border border-amber-500/30 flex items-center justify-center">
+                    <FileText className="w-6 h-6 text-amber-400" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-lg text-white">{draft.name || 'Unnamed Draft'}</h3>
+                    <span className="text-xs font-medium px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                      DRAFT
+                    </span>
+                  </div>
+                </div>
+                <ChevronRight className="w-5 h-5 text-zinc-500 group-hover:text-white group-hover:translate-x-1 transition-all" />
+              </div>
+
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-zinc-800 border border-zinc-700">
+                  <Users className="w-3.5 h-3.5 text-zinc-400" />
+                  <span className="text-xs font-mono text-zinc-300">
+                    {draft.owners?.length || 0}/{draft.owner_limit} joined
+                  </span>
+                </div>
+                <div className="text-xs text-zinc-500">
+                  {draft.threshold} sigs required
+                </div>
+              </div>
+
+              {/* Progress Bar */}
+              <div className="h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-gradient-to-r from-amber-500 to-orange-500 rounded-full transition-all"
+                  style={{ width: `${((draft.owners?.length || 0) / draft.owner_limit) * 100}%` }}
+                />
+              </div>
+            </motion.button>
+          ))}
+        </motion.div>
       )}
     </div>
   );

@@ -1,23 +1,14 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Inter } from "next/font/google";
 import "./globals.css";
 import { WalletProvider } from "@/components/WalletProvider";
 import { ToastProvider } from "@/components/ui/ToastProvider";
-import { Sidebar } from "@/components/Sidebar";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "MoveSafe - Multisig Wallet",
-  description: "Secure multisig wallet for Movement Network",
+  title: "MoveSafe",
+  description: "Secure Multisig for Movement Network",
 };
 
 export default function RootLayout({
@@ -27,16 +18,15 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased bg-white dark:bg-black text-slate-900 dark:text-slate-50`}>
+      <body className={`${inter.className} antialiased bg-zinc-950 text-white min-h-screen flex items-center justify-center overflow-hidden relative selection:bg-zinc-800 selection:text-white`}>
+        {/* Radial Gradient Mesh Background */}
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-zinc-900/50 via-zinc-950 to-zinc-950 pointer-events-none -z-10" />
+
         <ToastProvider>
           <WalletProvider>
-            <div className="flex min-h-screen">
-              <Sidebar />
-              <main className="flex-1 p-6 md:p-8 overflow-y-auto h-screen">
-                <div className="max-w-6xl mx-auto w-full">
-                  {children}
-                </div>
-              </main>
+            {/* Floating App Container - LANDSCAPE MODE */}
+            <div className="w-[960px] h-[640px] bg-black border border-zinc-800/80 rounded-[32px] shadow-2xl overflow-hidden relative flex flex-col ring-1 ring-white/5 backdrop-blur-3xl">
+              {children}
             </div>
           </WalletProvider>
         </ToastProvider>

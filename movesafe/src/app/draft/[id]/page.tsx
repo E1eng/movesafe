@@ -1,13 +1,13 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import Link from 'next/link';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
-import { ArrowLeft, Copy, Shield, Users } from 'lucide-react';
+import { ArrowLeft, Copy, Shield, Users, Link as LinkIcon, CheckCircle2, Loader2 } from 'lucide-react';
 import { useWallet } from '@aptos-labs/wallet-adapter-react';
 import { supabase, SafeDraft } from '@/lib/supabase';
 import { generateSafeAddress } from '@/lib/multisig';
 import { aptos, MOVEMENT_CONFIG } from '@/lib/movement';
+import { toast } from 'sonner';
 
 export default function DraftSafePage() {
   const router = useRouter();
@@ -23,12 +23,16 @@ export default function DraftSafePage() {
   const [finalizing, setFinalizing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [adminToken, setAdminToken] = useState('');
-  const [activateOnFinalize, setActivateOnFinalize] = useState(true);
 
   const connectedPubKey = useMemo(() => {
     if (!account?.publicKey) return null;
     return account.publicKey.toString().toLowerCase();
   }, [account?.publicKey]);
+
+  const isOwner = useMemo(() => {
+    if (!connectedPubKey || !draft?.owners) return false;
+    return draft.owners.map((o) => String(o).toLowerCase()).includes(connectedPubKey);
+  }, [connectedPubKey, draft?.owners]);
 
   const joinUrl = useMemo(() => {
     if (typeof window === 'undefined') return '';
@@ -71,9 +75,7 @@ export default function DraftSafePage() {
       if (typeof token === 'string') {
         setAdminToken(token);
       }
-    } catch {
-      // ignore
-    }
+    } catch { }
   }, [adminTokenFromQuery, draftId]);
 
   const canFinalize = !!draft && !!adminToken && draft.status === 'DRAFT';
@@ -81,22 +83,12 @@ export default function DraftSafePage() {
   const handleCopy = async () => {
     try {
       await navigator.clipboard.writeText(joinUrl);
-    } catch {
-      // ignore
-    }
+      toast.success('Invite link copied!');
+    } catch { }
   };
 
   const handleFinalize = async () => {
-    if (!draft) return;
-    if (!adminToken) {
-      setError('Invalid draft link (missing admin token).');
-      return;
-    }
-
-    if (!connected || !account) {
-      setError('Connect the admin wallet to finalize and activate this safe on-chain.');
-      return;
-    }
+    if (!draft || !adminToken || !connected || !account) return;
 
     const owners = (draft.owners || []).map((o) => String(o).toLowerCase());
     if (owners.length < draft.threshold) {
@@ -110,112 +102,52 @@ export default function DraftSafePage() {
     try {
       const safeAddress = generateSafeAddress(owners, draft.threshold);
 
-      // Ensure the Safe account exists on-chain before creating proposals.
-      // If it doesn't exist yet, the admin funds it once (wallet confirmation).
-      if (activateOnFinalize) {
-        let exists: boolean | null = null;
-        let checkDetails = '';
-        try {
-          await aptos.getAccountInfo({ accountAddress: safeAddress });
-          exists = true;
-        } catch (e: unknown) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const err = e as any;
-          const status = err?.status ?? err?.response?.status;
-          const errorCode = err?.errorCode ?? err?.data?.error_code ?? err?.response?.data?.error_code;
-          const msg = err?.message || err?.response?.data?.message || 'Unknown error';
+      // Activate on-chain
+      try {
+        await aptos.getAccountInfo({ accountAddress: safeAddress });
+      } catch {
+        if (!signTransaction) throw new Error('Wallet does not support signing');
 
-          let rpcChainId: number | null = null;
-          try {
-            rpcChainId = await aptos.getChainId();
-          } catch {
-            rpcChainId = null;
-          }
+        const rawTxn = await aptos.transaction.build.simple({
+          sender: account.address.toString(),
+          data: {
+            function: '0x1::aptos_account::transfer',
+            typeArguments: [],
+            functionArguments: [safeAddress, '1000000'], // 0.01 MOVE
+          },
+        });
 
-          checkDetails = `RPC=${MOVEMENT_CONFIG.fullnode} expectedChainId=${MOVEMENT_CONFIG.chainId} rpcChainId=${rpcChainId ?? 'unknown'} status=${status ?? 'unknown'} errorCode=${errorCode ?? 'unknown'} message=${msg}`;
-
-          if (status === 404 || errorCode === 'account_not_found' || errorCode === 'resource_not_found') {
-            exists = false;
-          } else {
-            // Unknown failure (RPC/network/CORS). Don't block finalize; attempt activation transfer anyway.
-            exists = null;
-          }
-        }
-
-        if (exists !== true) {
-          const amountOctas = '1000000'; // 0.01 MOVE
-
-          if (!signTransaction) {
-            throw new Error('Connected wallet does not support signing transactions.');
-          }
-
-          const rawTxn = await aptos.transaction.build.simple({
-            sender: account.address.toString(),
-            data: {
-              function: '0x1::aptos_account::transfer',
-              typeArguments: [],
-              functionArguments: [safeAddress, amountOctas],
-            },
-          });
-
-          const signed = await signTransaction({ transactionOrPayload: rawTxn });
-
-          try {
-            const committed = await aptos.transaction.submit.simple({
-              transaction: rawTxn,
-              senderAuthenticator: signed.authenticator,
-            });
-
-            await aptos.waitForTransaction({ transactionHash: committed.hash });
-          } catch (submitErr: unknown) {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const sErr = submitErr as any;
-            const submitMsg = sErr?.message || sErr?.response?.data?.message || 'Unknown submit error';
-            throw new Error(
-              checkDetails
-                ? `Failed to activate safe on-chain. Submit error: ${submitMsg}. Check: ${checkDetails}`
-                : `Failed to activate safe on-chain. Submit error: ${submitMsg}.`
-            );
-          }
-        }
+        const signed = await signTransaction({ transactionOrPayload: rawTxn });
+        const committed = await aptos.transaction.submit.simple({
+          transaction: rawTxn,
+          senderAuthenticator: signed.authenticator,
+        });
+        await aptos.waitForTransaction({ transactionHash: committed.hash });
       }
 
-      const { data: finalizedAddress, error: finalizeError } = await supabase.rpc('finalize_safe_draft', {
+      const { error: finalizeError } = await supabase.rpc('finalize_safe_draft', {
         draft_id: draft.id,
         admin_token: adminToken,
         safe_address: safeAddress,
       });
 
-      if (finalizeError) {
-        throw finalizeError;
-      }
+      if (finalizeError) throw finalizeError;
 
-      // Reload draft to reflect FINALIZED state
-      const { data: updated, error: reloadError } = await supabase
-        .from('safe_drafts')
-        .select('*')
-        .eq('id', draft.id)
-        .single();
-
-      if (reloadError) throw reloadError;
-      setDraft(updated as SafeDraft);
-
-      // Cache to localStorage for quick access
+      // Cache locally
       try {
         const existing = JSON.parse(localStorage.getItem('movesafe_safes') || '[]');
-        const newSafe = {
+        existing.unshift({
           address: safeAddress,
           name: draft.name,
           threshold: draft.threshold,
           owners,
           createdAt: new Date().toISOString(),
-        };
-        localStorage.setItem('movesafe_safes', JSON.stringify([newSafe, ...existing]));
-      } catch {
-        // ignore
-      }
+        });
+        localStorage.setItem('movesafe_safes', JSON.stringify(existing));
+      } catch { }
 
-      router.push(`/safes/${String(finalizedAddress || safeAddress)}`);
+      toast.success('Safe finalized!');
+      router.push(`/dashboard?safe=${safeAddress}`);
     } catch (e: unknown) {
       const err = e as Error;
       setError(err?.message || 'Failed to finalize draft');
@@ -224,119 +156,153 @@ export default function DraftSafePage() {
     }
   };
 
-  return (
-    <div className="py-12">
-      <div className="container mx-auto px-4 max-w-3xl">
-        <Link
-          href="/safes"
-          className="inline-flex items-center gap-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 mb-8"
+  if (loading) {
+    return (
+      <div className="h-full flex items-center justify-center bg-black">
+        <Loader2 className="w-8 h-8 text-zinc-500 animate-spin" />
+      </div>
+    );
+  }
+
+  if (!draft) {
+    return (
+      <div className="h-full flex flex-col items-center justify-center bg-black text-white p-8">
+        <div className="w-16 h-16 rounded-3xl bg-zinc-900 border border-zinc-800 flex items-center justify-center mb-4">
+          <Shield className="w-8 h-8 text-zinc-600" />
+        </div>
+        <h3 className="text-xl font-bold mb-2">Draft Not Found</h3>
+        <p className="text-zinc-500 mb-6">{error || 'This draft may have been deleted.'}</p>
+        <button
+          onClick={() => router.push('/select')}
+          className="px-6 py-3 bg-white text-black font-bold rounded-xl hover:bg-zinc-200 transition-colors"
         >
-          <ArrowLeft className="w-4 h-4" />
           Back to Safes
-        </Link>
+        </button>
+      </div>
+    );
+  }
 
-        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg p-8">
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-50 mb-2">Draft Safe</h1>
-          <p className="text-slate-600 dark:text-slate-400 mb-6">
-            Share the join link. Each owner connects their wallet and we store their <span className="font-mono">publicKey</span>.
-          </p>
+  return (
+    <div className="h-full flex flex-col p-8 bg-black text-white relative overflow-hidden">
+      {/* Background Decor */}
+      <div className="absolute top-[-20%] left-[-20%] w-[500px] h-[500px] bg-amber-900/10 rounded-full blur-[100px] pointer-events-none" />
 
-          {loading ? (
-            <div className="text-slate-600 dark:text-slate-400">Loading...</div>
-          ) : error ? (
-            <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg mb-6">
-              <div className="text-sm text-red-600 dark:text-red-400">{error}</div>
-            </div>
-          ) : !draft ? (
-            <div className="text-slate-600 dark:text-slate-400">Draft not found.</div>
-          ) : (
-            <>
-              <div className="border border-slate-200 dark:border-slate-700 rounded-lg p-4 mb-6">
-                <div className="font-semibold text-slate-900 dark:text-slate-50 mb-1">{draft.name}</div>
-                <div className="text-sm text-slate-600 dark:text-slate-400 flex items-center gap-2">
-                  <Users className="w-4 h-4" />
-                  {draft.threshold}/{draft.owner_limit} signatures
-                </div>
-                <div className="text-sm text-slate-600 dark:text-slate-400 mt-2">
-                  Owners joined: {draft.owners?.length ?? 0}/{draft.owner_limit}
-                </div>
-                <div className="text-sm text-slate-600 dark:text-slate-400 mt-2">
-                  Status: <span className="font-semibold">{draft.status}</span>
-                </div>
-                {draft.finalized_safe_address && (
-                  <div className="text-sm text-slate-600 dark:text-slate-400 mt-2">
-                    Finalized safe: <span className="font-mono">{draft.finalized_safe_address}</span>
-                  </div>
-                )}
-              </div>
+      {/* Header */}
+      <div className="relative z-10 mb-8">
+        <button
+          onClick={() => router.push('/drafts')}
+          className="flex items-center gap-2 text-zinc-500 hover:text-white transition-colors mb-6 group"
+        >
+          <div className="w-8 h-8 rounded-full bg-zinc-900 flex items-center justify-center group-hover:bg-zinc-800">
+            <ArrowLeft className="w-4 h-4" />
+          </div>
+          <span className="text-sm font-medium">Back to Drafts</span>
+        </button>
 
-              <div className="border border-slate-200 dark:border-slate-700 rounded-lg p-4 mb-6">
-                <div className="text-sm font-medium text-slate-900 dark:text-slate-50 mb-2">Join link</div>
-                <div className="flex items-center gap-2">
-                  <input
-                    value={joinUrl}
-                    readOnly
-                    className="flex-1 px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 font-mono text-sm"
-                  />
-                  <button
-                    onClick={handleCopy}
-                    className="px-3 py-2 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 rounded-lg"
-                    aria-label="Copy join link"
-                  >
-                    <Copy className="w-4 h-4" />
-                  </button>
-                </div>
-                <div className="text-xs text-slate-500 dark:text-slate-400 mt-2">
-                  Anyone with this link can add their wallet public key as an owner while the draft is in DRAFT state.
-                </div>
-              </div>
-
-              {!connected && (
-                <div className="p-4 bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-700 rounded-lg mb-6">
-                  <div className="text-sm text-slate-700 dark:text-slate-300">
-                    Connect your wallet to see whether you’re already an owner and (if creator) finalize.
-                  </div>
-                </div>
-              )}
-
-              {connectedPubKey && draft.owners?.map((o) => o.toLowerCase()).includes(connectedPubKey) && (
-                <div className="text-sm text-green-700 dark:text-green-400 mb-6">
-                  Your connected wallet is included as an owner.
-                </div>
-              )}
-
-              {draft.status === 'DRAFT' && (
-                <div className="flex flex-col gap-3">
-                  <Link
-                    href={`/join/${draft.id}?t=${draft.join_token}`}
-                    className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg font-semibold text-slate-900 dark:text-slate-100"
-                  >
-                    Join this draft
-                  </Link>
-
-                  <label className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
-                    <input
-                      type="checkbox"
-                      checked={activateOnFinalize}
-                      onChange={(e) => setActivateOnFinalize(e.target.checked)}
-                    />
-                    Activate on-chain on finalize (admin wallet confirmation)
-                  </label>
-
-                  <button
-                    onClick={handleFinalize}
-                    disabled={!canFinalize || finalizing}
-                    className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-lg font-semibold transition-colors"
-                  >
-                    <Shield className="w-5 h-5" />
-                    {finalizing ? 'Finalizing...' : canFinalize ? 'Finalize & Create Safe' : 'Missing admin token'}
-                  </button>
-                </div>
-              )}
-            </>
-          )}
+        <div className="flex items-center gap-4">
+          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-500/20 to-orange-500/20 border border-amber-500/30 flex items-center justify-center">
+            <Shield className="w-7 h-7 text-amber-400" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold">{draft.name}</h1>
+            <span className="text-xs font-medium px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-400 border border-amber-500/20">
+              {draft.status}
+            </span>
+          </div>
         </div>
       </div>
+
+      {/* Stats */}
+      <div className="flex gap-4 mb-8">
+        <div className="flex-1 p-4 rounded-2xl bg-zinc-900/50 border border-zinc-800">
+          <div className="text-xs text-zinc-500 mb-1">Signatures Required</div>
+          <div className="text-xl font-bold">{draft.threshold}</div>
+        </div>
+        <div className="flex-1 p-4 rounded-2xl bg-zinc-900/50 border border-zinc-800">
+          <div className="text-xs text-zinc-500 mb-1">Owners Joined</div>
+          <div className="text-xl font-bold flex items-center gap-2">
+            {draft.owners?.length || 0}/{draft.owner_limit}
+            {(draft.owners?.length || 0) >= draft.owner_limit && (
+              <CheckCircle2 className="w-5 h-5 text-green-400" />
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Invite Link */}
+      <div className="p-5 rounded-3xl bg-zinc-900/50 border border-zinc-800 mb-6">
+        <div className="flex items-center gap-2 text-sm font-medium text-zinc-300 mb-3">
+          <LinkIcon className="w-4 h-4" />
+          Invite Link
+        </div>
+        <div className="flex gap-2">
+          <input
+            value={joinUrl}
+            readOnly
+            className="flex-1 bg-black border border-zinc-700 rounded-xl px-4 py-3 font-mono text-sm text-zinc-300"
+          />
+          <button
+            onClick={handleCopy}
+            className="px-4 py-3 bg-zinc-800 hover:bg-zinc-700 rounded-xl transition-colors"
+          >
+            <Copy className="w-5 h-5" />
+          </button>
+        </div>
+        <p className="text-xs text-zinc-500 mt-2">
+          Share this link with co-signers. They connect their wallet to join.
+        </p>
+      </div>
+
+      {/* Status Message */}
+      {isOwner && (
+        <div className="p-4 rounded-2xl bg-green-500/10 border border-green-500/20 mb-6">
+          <p className="text-sm text-green-400 flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4" />
+            You are already an owner of this draft.
+          </p>
+        </div>
+      )}
+
+      {error && (
+        <div className="p-4 rounded-2xl bg-red-500/10 border border-red-500/20 mb-6">
+          <p className="text-sm text-red-400">{error}</p>
+        </div>
+      )}
+
+      {/* Actions */}
+      {draft.status === 'DRAFT' && (
+        <div className="mt-auto space-y-3">
+          {!isOwner && (
+            <button
+              onClick={() => router.push(`/join/${draft.id}?t=${draft.join_token}`)}
+              className="w-full py-4 bg-zinc-900 border border-zinc-700 hover:bg-zinc-800 rounded-2xl font-bold transition-colors"
+            >
+              Join This Draft
+            </button>
+          )}
+
+          <button
+            onClick={handleFinalize}
+            disabled={!canFinalize || finalizing}
+            className="w-full py-4 bg-white text-black font-bold rounded-2xl hover:bg-zinc-200 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+          >
+            {finalizing && <Loader2 className="w-4 h-4 animate-spin" />}
+            <Shield className="w-5 h-5" />
+            {finalizing ? 'Finalizing...' : canFinalize ? 'Finalize & Create Safe' : 'Missing Admin Token'}
+          </button>
+        </div>
+      )}
+
+      {draft.status === 'FINALIZED' && draft.finalized_safe_address && (
+        <div className="mt-auto">
+          <button
+            onClick={() => router.push(`/dashboard?safe=${draft.finalized_safe_address}`)}
+            className="w-full py-4 bg-white text-black font-bold rounded-2xl hover:bg-zinc-200 transition-colors"
+          >
+            Open Safe Dashboard
+          </button>
+        </div>
+      )}
     </div>
   );
 }
