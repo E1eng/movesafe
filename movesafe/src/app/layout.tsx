@@ -24,8 +24,10 @@ export default function RootLayout({
 
         <ToastProvider>
           <WalletProvider>
-            {/* Floating App Container - LANDSCAPE MODE */}
-            <div className="w-[960px] h-[640px] bg-black border border-zinc-800/80 rounded-[32px] shadow-2xl overflow-hidden relative flex flex-col ring-1 ring-white/5 backdrop-blur-3xl">
+            {/* Hybrid App Container */}
+            {/* Mobile (Default): Full Screen, No Borders */}
+            {/* Desktop (md): Fixed 960x640 (Original), Floating Card Style */}
+            <div className="w-full h-[100dvh] bg-black shadow-none border-none rounded-none overflow-hidden relative flex flex-col md:w-[960px] md:h-[640px] md:max-h-[85vh] md:border md:border-zinc-800 md:rounded-[32px] md:shadow-2xl md:ring-1 md:ring-white/5 md:backdrop-blur-3xl">
               {children}
             </div>
           </WalletProvider>
