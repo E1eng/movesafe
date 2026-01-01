@@ -219,9 +219,12 @@ export function SafeDashboardView({ safeAddress, onBack }: SafeDashboardViewProp
         </div>
     );
 
-    const NavItem = ({ id, label, icon: Icon }: { id: Tab, label: string, icon: any }) => (
+    const NavItem = ({ id, label, icon: Icon, onSelect }: { id: Tab, label: string, icon: any, onSelect?: () => void }) => (
         <button
-            onClick={() => setActiveTab(id)}
+            onClick={() => {
+                setActiveTab(id);
+                if (onSelect) onSelect();
+            }}
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${activeTab === id
                 ? 'bg-white text-black font-medium shadow-md shadow-white/5'
                 : 'text-zinc-500 hover:text-zinc-300 hover:bg-zinc-900'
@@ -549,10 +552,10 @@ export function SafeDashboardView({ safeAddress, onBack }: SafeDashboardViewProp
                                 </button>
                             </div>
                             <div className="flex-1 px-4 space-y-1 overflow-y-auto">
-                                <NavItem id="queue" label="Queue" icon={History} />
-                                <NavItem id="history" label="History" icon={CheckCircle2} />
-                                <NavItem id="assets" label="Assets" icon={Coins} />
-                                <NavItem id="signers" label="Signers" icon={Users} />
+                                <NavItem id="queue" label="Queue" icon={History} onSelect={() => setIsMobileMenuOpen(false)} />
+                                <NavItem id="history" label="History" icon={CheckCircle2} onSelect={() => setIsMobileMenuOpen(false)} />
+                                <NavItem id="assets" label="Assets" icon={Coins} onSelect={() => setIsMobileMenuOpen(false)} />
+                                <NavItem id="signers" label="Signers" icon={Users} onSelect={() => setIsMobileMenuOpen(false)} />
                             </div>
                             <div className="p-6 border-t border-zinc-800">
                                 <button onClick={onBack} className="flex items-center gap-3 text-red-400 font-medium">
