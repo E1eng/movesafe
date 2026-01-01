@@ -53,7 +53,12 @@ export function WalletSelector({ isOpen, onClose }: WalletSelectorProps) {
     }
   };
 
-  const sortedWallets = [...(wallets || [])].sort((a: unknown, b: unknown) => {
+  const filteredWallets = (wallets || []).filter(w =>
+    !w.name.toLowerCase().includes('google') &&
+    !w.name.toLowerCase().includes('apple')
+  );
+
+  const sortedWallets = [...filteredWallets].sort((a: unknown, b: unknown) => {
     const wA = a as AptosWallet;
     const wB = b as AptosWallet;
     const aInstalled = 'readyState' in wA && wA.readyState === 'Installed';
@@ -80,15 +85,26 @@ export function WalletSelector({ isOpen, onClose }: WalletSelectorProps) {
             <p className="text-zinc-400 mb-4">
               No wallets detected. Please install a wallet extension.
             </p>
-            <a
-              href="https://petra.app"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 text-blue-400 hover:text-blue-300"
-            >
-              Get Petra Wallet
-              <ExternalLink className="w-4 h-4" />
-            </a>
+            <div className="flex flex-col gap-2">
+              <a
+                href="https://petra.app"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center gap-2 px-4 py-3 bg-zinc-900 border border-zinc-800 rounded-xl text-sm text-zinc-300 hover:bg-zinc-800 transition-colors"
+              >
+                Get Petra Wallet
+                <ExternalLink className="w-4 h-4" />
+              </a>
+              <a
+                href="https://nightly.app"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center gap-2 px-4 py-3 bg-zinc-900 border border-zinc-800 rounded-xl text-sm text-zinc-300 hover:bg-zinc-800 transition-colors"
+              >
+                Get Nightly Wallet
+                <ExternalLink className="w-4 h-4" />
+              </a>
+            </div>
           </div>
         ) : (
           sortedWallets.map((wallet: unknown) => {
@@ -143,14 +159,7 @@ export function WalletSelector({ isOpen, onClose }: WalletSelectorProps) {
         </div>
       )}
 
-      <ModalFooter>
-        <button
-          onClick={onClose}
-          className="px-4 py-2 text-zinc-400 hover:text-white transition-colors"
-        >
-          Cancel
-        </button>
-      </ModalFooter>
+
     </Modal>
   );
 }

@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { useWallet } from '@aptos-labs/wallet-adapter-react';
-import { Plus, Shield, Search, Loader2, ArrowRight, Wallet } from 'lucide-react';
+import { Plus, Shield, Search, Loader2, ArrowRight, Wallet, LogOut } from 'lucide-react';
 import { supabase, Safe } from '@/lib/supabase';
 import { CreateSafeModal } from '@/components/features/safe/CreateSafeModal';
 import { useRouter } from 'next/navigation';
@@ -13,7 +13,7 @@ interface SafeSelectionViewProps {
 }
 
 export function SafeSelectionView({ onSelectSafe }: SafeSelectionViewProps) {
-    const { account } = useWallet();
+    const { account, disconnect } = useWallet();
     const router = useRouter();
     const [safes, setSafes] = useState<Safe[]>([]);
     const [loading, setLoading] = useState(true);
@@ -174,6 +174,20 @@ export function SafeSelectionView({ onSelectSafe }: SafeSelectionViewProps) {
                             <div className="text-left min-w-0">
                                 <div className="font-bold text-white text-sm md:text-lg truncate">Drafts</div>
                                 <div className="text-[10px] md:text-xs text-zinc-500 font-medium truncate">View pending</div>
+                            </div>
+                        </motion.button>
+                        <motion.button
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
+                            onClick={() => disconnect()}
+                            className="p-4 md:p-5 rounded-3xl bg-zinc-900 border border-zinc-800 flex flex-row md:flex-col items-center md:items-start gap-3 hover:bg-zinc-800 transition-colors group/logout"
+                        >
+                            <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-zinc-800 flex items-center justify-center border border-zinc-700 shrink-0 group-hover/logout:border-red-500/30">
+                                <LogOut className="w-4 h-4 md:w-5 md:h-5 text-zinc-400 group-hover/logout:text-red-400 transition-colors" />
+                            </div>
+                            <div className="text-left min-w-0">
+                                <div className="font-bold text-white text-sm md:text-lg truncate group-hover/logout:text-red-400 transition-colors">Logout</div>
+                                <div className="text-[10px] md:text-xs text-zinc-500 font-medium truncate">Disconnect</div>
                             </div>
                         </motion.button>
                     </div>

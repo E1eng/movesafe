@@ -162,13 +162,6 @@ export function NewTransactionModal({
 
         <ModalFooter>
           <button
-            type="button"
-            onClick={handleClose}
-            className="px-4 py-2 text-zinc-400 hover:text-white transition-colors"
-          >
-            Cancel
-          </button>
-          <button
             type="submit"
             disabled={loading || !!recipientError || !!amountError || !recipient || !amount}
             className="flex items-center gap-2 px-4 py-2 bg-white text-black font-medium rounded-xl hover:bg-zinc-200 transition-colors disabled:opacity-50"

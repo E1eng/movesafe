@@ -46,13 +46,6 @@ export function ConfirmDialog({
 
                 <ModalFooter>
                     <button
-                        onClick={onClose}
-                        disabled={loading}
-                        className="px-4 py-2 text-zinc-400 hover:text-white transition-colors disabled:opacity-50"
-                    >
-                        {cancelText}
-                    </button>
-                    <button
                         onClick={onConfirm}
                         disabled={loading}
                         className={`
