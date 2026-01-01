@@ -12,6 +12,7 @@ interface UseTransactionProps {
 interface CreateTransactionParams {
   recipient?: string;
   amount?: string; // Amount in MOVE
+  memo?: string; // Description/message for the transaction
   customPayload?: TransactionPayload; // Optional custom payload
 }
 
@@ -19,7 +20,7 @@ export function useTransaction({ safeAddress, creatorAddress, onSuccess }: UseTr
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const createTransaction = async ({ recipient, amount, customPayload }: CreateTransactionParams) => {
+  const createTransaction = async ({ recipient, amount, memo, customPayload }: CreateTransactionParams) => {
     setLoading(true);
     setError(null);
 
@@ -128,6 +129,7 @@ export function useTransaction({ safeAddress, creatorAddress, onSuccess }: UseTr
           created_by: creatorAddress,
           sequence_number: nextSequenceNumber,
           status: 'PENDING',
+          memo: memo || null,
         });
 
       if (insertError) throw new Error(`Failed to save transaction: ${insertError.message}`);

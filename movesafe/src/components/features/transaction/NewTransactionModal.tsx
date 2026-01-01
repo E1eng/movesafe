@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Send, AlertCircle, Wallet, Coins, Loader2 } from 'lucide-react';
+import { Send, AlertCircle, Wallet, Coins, Loader2, MessageSquare } from 'lucide-react';
 import { useWallet } from '@aptos-labs/wallet-adapter-react';
 import { Modal, ModalFooter } from '@/components/ui/Modal';
 import { Input } from '@/components/ui/Input';
@@ -28,6 +28,7 @@ export function NewTransactionModal({
   const { account } = useWallet();
   const [recipient, setRecipient] = useState('');
   const [amount, setAmount] = useState('');
+  const [memo, setMemo] = useState('');
 
   const [recipientError, setRecipientError] = useState<string | null>(null);
   const [amountError, setAmountError] = useState<string | null>(null);
@@ -38,6 +39,7 @@ export function NewTransactionModal({
     onSuccess: () => {
       setRecipient('');
       setAmount('');
+      setMemo('');
       onTransactionCreated();
       onClose();
     }
@@ -77,12 +79,13 @@ export function NewTransactionModal({
       return;
     }
 
-    await createTransaction({ recipient, amount });
+    await createTransaction({ recipient, amount, memo });
   };
 
   const handleClose = () => {
     setRecipient('');
     setAmount('');
+    setMemo('');
     setError(null);
     setRecipientError(null);
     setAmountError(null);
@@ -123,6 +126,24 @@ export function NewTransactionModal({
               <span className="text-xs px-2 py-0.5 bg-blue-500/10 text-blue-400 rounded-md border border-blue-500/20">MOVE</span>
             }
           />
+        </div>
+
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-zinc-300">Message (Optional)</label>
+          <div className="relative">
+            <div className="absolute left-3 top-3 text-zinc-500">
+              <MessageSquare className="w-4 h-4" />
+            </div>
+            <textarea
+              value={memo}
+              onChange={(e) => setMemo(e.target.value)}
+              placeholder="What is this transaction for?"
+              rows={3}
+              maxLength={500}
+              className="w-full pl-10 pr-4 py-2.5 bg-zinc-900 border border-zinc-800 rounded-xl text-white placeholder:text-zinc-600 focus:outline-none focus:border-zinc-600 resize-none"
+            />
+          </div>
+          <p className="text-xs text-zinc-600">{memo.length}/500 characters</p>
         </div>
 
         {error && (

@@ -391,6 +391,9 @@ export function SafeDashboardView({ safeAddress, onBack }: SafeDashboardViewProp
                                                     <div className="text-xs text-zinc-500 flex items-center gap-2">
                                                         To: <code className="font-mono bg-zinc-800 px-1 py-0.5 rounded">{recipient.slice(0, 8)}...{recipient.slice(-6)}</code>
                                                     </div>
+                                                    {tx.memo && (
+                                                        <div className="text-xs text-zinc-400 mt-1 italic">"{tx.memo}"</div>
+                                                    )}
                                                 </div>
                                                 <div className="text-right">
                                                     <div className="text-xs text-zinc-500">

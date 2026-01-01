@@ -72,6 +72,9 @@ CREATE TABLE IF NOT EXISTS transactions (
     -- Optional: Transaction hash after execution (null if pending)
     tx_hash TEXT,
     
+    -- Optional: Description/message explaining the purpose of this transaction
+    memo TEXT,
+    
     -- Metadata
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     executed_at TIMESTAMPTZ,
@@ -119,8 +122,11 @@ CREATE INDEX IF NOT EXISTS idx_signatures_signer ON signatures(signer_address);
 -- ============================================================================
 -- Helper view to identify transactions that have collected enough signatures
 -- A transaction is executable when: signature_count >= threshold AND status = 'PENDING'
+-- Using SECURITY INVOKER (caller's permissions) for RLS compliance
 
-CREATE OR REPLACE VIEW executable_transactions AS
+DROP VIEW IF EXISTS executable_transactions;
+CREATE VIEW executable_transactions 
+WITH (security_invoker = true) AS
 SELECT 
     t.id,
     t.safe_address,
@@ -166,7 +172,7 @@ BEGIN
     WHERE sig.transaction_id = tx_id
     ORDER BY signer_index;
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql STABLE SET search_path = public;
 
 -- ============================================================================
 -- TRIGGERS: Updated Timestamps
@@ -178,7 +184,7 @@ BEGIN
     NEW.updated_at = NOW();
     RETURN NEW;
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql SET search_path = public;
 
 DROP TRIGGER IF EXISTS update_safes_updated_at ON safes;
 
@@ -253,7 +259,7 @@ BEGIN
 
     RETURN d;
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 -- ============================================================================
 -- FUNCTION: finalize_safe_draft
@@ -290,46 +296,178 @@ BEGIN
 
     RETURN safe_address;
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 -- ============================================================================
--- ROW LEVEL SECURITY (RLS) - Optional but Recommended
+-- ROW LEVEL SECURITY (RLS) - PRODUCTION READY
 -- ============================================================================
--- Enable RLS if you want user-level access control
--- For MVP, you might disable this and handle permissions in application layer
+-- Since we use wallet addresses instead of Supabase Auth, we use a custom
+-- header 'x-wallet-address' to identify the user. This header must be set
+-- by the client in every request.
+--
+-- IMPORTANT: In production, you should verify the wallet signature on the
+-- server side to prevent header spoofing. For now, we trust the header.
+-- ============================================================================
 
--- Uncomment below to enable RLS:
-/*
+-- Helper function to get the current wallet address from request header
+CREATE OR REPLACE FUNCTION get_wallet_address()
+RETURNS TEXT AS $$
+BEGIN
+    RETURN COALESCE(
+        current_setting('request.headers', true)::json->>'x-wallet-address',
+        ''
+    );
+END;
+$$ LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = public;
+
+-- ============================================================================
+-- ENABLE RLS ON ALL TABLES
+-- ============================================================================
+
 ALTER TABLE safes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE transactions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE signatures ENABLE ROW LEVEL SECURITY;
+ALTER TABLE safe_drafts ENABLE ROW LEVEL SECURITY;
 
--- Example policy: Users can only see safes where they are an owner
-CREATE POLICY "Users can view their own safes"
+-- ============================================================================
+-- POLICIES: safes
+-- ============================================================================
+
+-- Anyone can view safes (needed for lookup by address)
+DROP POLICY IF EXISTS "Allow select for all" ON safes;
+CREATE POLICY "Allow select for all"
     ON safes FOR SELECT
-    USING (auth.uid()::text = ANY(owners));
+    USING (true);
 
--- Example policy: Owners can create transactions for their safes
+-- Only owners can update their safes
+DROP POLICY IF EXISTS "Owners can update safes" ON safes;
+CREATE POLICY "Owners can update safes"
+    ON safes FOR UPDATE
+    USING (get_wallet_address() = ANY(owners));
+
+-- Insert via RPC function (finalize_safe_draft)
+DROP POLICY IF EXISTS "Allow insert via service" ON safes;
+CREATE POLICY "Allow insert via service"
+    ON safes FOR INSERT
+    WITH CHECK (true);
+
+-- No direct delete allowed
+DROP POLICY IF EXISTS "No delete" ON safes;
+CREATE POLICY "No delete"
+    ON safes FOR DELETE
+    USING (false);
+
+-- ============================================================================
+-- POLICIES: transactions
+-- ============================================================================
+
+-- Anyone can view transactions (for transparency)
+DROP POLICY IF EXISTS "Allow select for all" ON transactions;
+CREATE POLICY "Allow select for all"
+    ON transactions FOR SELECT
+    USING (true);
+
+-- Only safe owners can create transactions
+DROP POLICY IF EXISTS "Owners can create transactions" ON transactions;
 CREATE POLICY "Owners can create transactions"
     ON transactions FOR INSERT
     WITH CHECK (
-        created_by = auth.uid()::text 
-        AND created_by = ANY(SELECT unnest(owners) FROM safes WHERE address = safe_address)
-    );
-
--- Example policy: Owners can sign their safe's transactions
-CREATE POLICY "Owners can sign transactions"
-    ON signatures FOR INSERT
-    WITH CHECK (
-        signer_address = auth.uid()::text
-        AND signer_address = ANY(
-            SELECT unnest(s.owners) 
-            FROM safes s 
-            JOIN transactions t ON s.address = t.safe_address 
-            WHERE t.id = transaction_id
+        get_wallet_address() = created_by
+        AND EXISTS (
+            SELECT 1 FROM safes 
+            WHERE address = safe_address 
+            AND get_wallet_address() = ANY(owners)
         )
     );
-*/
+
+-- Only safe owners can update transactions
+DROP POLICY IF EXISTS "Owners can update transactions" ON transactions;
+CREATE POLICY "Owners can update transactions"
+    ON transactions FOR UPDATE
+    USING (
+        EXISTS (
+            SELECT 1 FROM safes 
+            WHERE address = safe_address 
+            AND get_wallet_address() = ANY(owners)
+        )
+    );
+
+-- Only creator can delete pending transactions
+DROP POLICY IF EXISTS "Creator can delete pending" ON transactions;
+CREATE POLICY "Creator can delete pending"
+    ON transactions FOR DELETE
+    USING (
+        status = 'PENDING' 
+        AND get_wallet_address() = created_by
+    );
+
+-- ============================================================================
+-- POLICIES: signatures
+-- ============================================================================
+
+-- Anyone can view signatures (for verification)
+DROP POLICY IF EXISTS "Allow select for all" ON signatures;
+CREATE POLICY "Allow select for all"
+    ON signatures FOR SELECT
+    USING (true);
+
+-- Only the signer themselves can insert their signature
+DROP POLICY IF EXISTS "Signer can sign" ON signatures;
+CREATE POLICY "Signer can sign"
+    ON signatures FOR INSERT
+    WITH CHECK (
+        get_wallet_address() = signer_address
+        AND EXISTS (
+            SELECT 1 FROM transactions t
+            JOIN safes s ON t.safe_address = s.address
+            WHERE t.id = transaction_id
+            AND t.status = 'PENDING'
+            AND get_wallet_address() = ANY(s.owners)
+        )
+    );
+
+-- Signatures cannot be updated
+DROP POLICY IF EXISTS "No update" ON signatures;
+CREATE POLICY "No update"
+    ON signatures FOR UPDATE
+    USING (false);
+
+-- Only the signer can delete their own signature (retract)
+DROP POLICY IF EXISTS "Signer can retract" ON signatures;
+CREATE POLICY "Signer can retract"
+    ON signatures FOR DELETE
+    USING (get_wallet_address() = signer_address);
+
+-- ============================================================================
+-- POLICIES: safe_drafts
+-- ============================================================================
+
+-- Anyone can view draft details (needed for join flow)
+DROP POLICY IF EXISTS "Allow select for all" ON safe_drafts;
+CREATE POLICY "Allow select for all"
+    ON safe_drafts FOR SELECT
+    USING (true);
+
+-- Anyone with wallet can create a draft
+DROP POLICY IF EXISTS "Anyone can create draft" ON safe_drafts;
+CREATE POLICY "Anyone can create draft"
+    ON safe_drafts FOR INSERT
+    WITH CHECK (get_wallet_address() != '');
+
+-- Only creator or draft members can update
+DROP POLICY IF EXISTS "Members can update draft" ON safe_drafts;
+CREATE POLICY "Members can update draft"
+    ON safe_drafts FOR UPDATE
+    USING (
+        get_wallet_address() = created_by_pubkey
+        OR get_wallet_address() = ANY(owners)
+    );
+
+-- Only creator can delete draft
+DROP POLICY IF EXISTS "Creator can delete draft" ON safe_drafts;
+CREATE POLICY "Creator can delete draft"
+    ON safe_drafts FOR DELETE
+    USING (get_wallet_address() = created_by_pubkey);
 
 -- ============================================================================
 -- VERIFICATION QUERY

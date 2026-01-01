@@ -99,6 +99,11 @@ export function TransactionQueueItem({
               <Copy className="w-3 h-3" />
             </button>
           </div>
+          {transaction.memo && (
+            <div className="text-sm text-zinc-400 mt-1 italic">
+              "{transaction.memo}"
+            </div>
+          )}
         </div>
 
         {/* Signature Progress */}

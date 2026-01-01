@@ -1,9 +1,22 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
+// Default client (for operations that don't need wallet auth)
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
+// Factory function to create a Supabase client with wallet address header
+// This is used for RLS-protected operations
+export function getSupabaseWithWallet(walletAddress: string): SupabaseClient {
+  return createClient(supabaseUrl, supabaseAnonKey, {
+    global: {
+      headers: {
+        'x-wallet-address': walletAddress.toLowerCase(),
+      },
+    },
+  });
+}
 
 export interface Safe {
   id: string;
@@ -46,6 +59,7 @@ export interface Transaction {
   status: 'PENDING' | 'EXECUTED' | 'REJECTED';
   created_by: string;
   sequence_number: number;
+  memo?: string;
   tx_hash?: string;
   created_at: string;
   executed_at?: string;
