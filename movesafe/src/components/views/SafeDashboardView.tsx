@@ -9,6 +9,7 @@ import {
 import { supabase, Safe, Transaction } from '@/lib/supabase';
 import { TransactionQueueItem } from '@/components/features/transaction/TransactionQueueItem';
 import { NewTransactionModal } from '@/components/features/transaction/NewTransactionModal';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { useWallet } from '@aptos-labs/wallet-adapter-react';
 import { useMovePrice } from '@/hooks/useMovePrice';
 import { aptos } from '@/lib/movement';
@@ -39,6 +40,7 @@ export function SafeDashboardView({ safeAddress, onBack }: SafeDashboardViewProp
     const [loading, setLoading] = useState(true);
     const [isTxModalOpen, setIsTxModalOpen] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
     // Action States
     const [signingTxId, setSigningTxId] = useState<string | null>(null);
@@ -207,10 +209,23 @@ export function SafeDashboardView({ safeAddress, onBack }: SafeDashboardViewProp
         }
     };
 
-    const handleDiscard = async (tx: ExtendedTransaction) => {
-        if (!confirm("Discard transaction?")) return;
-        await supabase.from('transactions').delete().eq('id', tx.id);
-        loadData();
+    const handleDiscard = (tx: ExtendedTransaction) => {
+        setConfirmDeleteId(tx.id);
+    };
+
+    const handleDeleteConfirm = async () => {
+        if (!confirmDeleteId) return;
+        try {
+            const { error } = await supabase.from('transactions').delete().eq('id', confirmDeleteId);
+            if (error) throw error;
+            toast.success("Transaction discarded");
+            loadData();
+        } catch (e: any) {
+            console.error("Delete failed", e);
+            toast.error("Failed to delete");
+        } finally {
+            setConfirmDeleteId(null);
+        }
     };
 
     if (loading || !safe) return (
@@ -530,6 +545,17 @@ export function SafeDashboardView({ safeAddress, onBack }: SafeDashboardViewProp
                     }}
                 />
             </div>
+
+            {/* Confirmation Dialog */}
+            <ConfirmDialog
+                isOpen={!!confirmDeleteId}
+                onClose={() => setConfirmDeleteId(null)}
+                onConfirm={handleDeleteConfirm}
+                title="Discard Transaction"
+                description="Are you sure you want to discard this transaction? It will be permanently removed from the queue."
+                confirmText="Discard"
+                variant="danger"
+            />
 
             {/* Mobile Navigation Drawer */}
             <AnimatePresence>
