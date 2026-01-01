@@ -164,7 +164,7 @@ export function NewTransactionModal({
           <button
             type="submit"
             disabled={loading || !!recipientError || !!amountError || !recipient || !amount}
-            className="flex items-center gap-2 px-4 py-2 bg-white text-black font-medium rounded-xl hover:bg-zinc-200 transition-colors disabled:opacity-50"
+            className="flex items-center gap-2 px-4 py-2 bg-white text-black font-medium rounded-xl hover:bg-zinc-200 transition-colors disabled:opacity-50 cursor-pointer"
           >
             {loading && <Loader2 className="w-4 h-4 animate-spin" />}
             <Send className="w-4 h-4" />

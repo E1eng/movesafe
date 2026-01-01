@@ -117,7 +117,7 @@ export function SafeSelectionView({ onSelectSafe }: SafeSelectionViewProps) {
                                         whileHover={{ scale: 1.02, y: -2 }}
                                         whileTap={{ scale: 0.98 }}
                                         onClick={() => onSelectSafe(safe.address)}
-                                        className="group relative p-5 rounded-3xl bg-zinc-900/50 border border-zinc-800 hover:bg-zinc-900 hover:border-zinc-700 transition-all text-left flex flex-col justify-between min-h-[160px]"
+                                        className="group relative p-5 rounded-3xl bg-zinc-900/50 border border-zinc-800 hover:bg-zinc-900 hover:border-zinc-700 transition-all text-left flex flex-col justify-between min-h-[160px] cursor-pointer"
                                     >
                                         <div className="flex items-start justify-between mb-4">
                                             <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-zinc-800 to-zinc-900 border border-zinc-700/50 flex items-center justify-center group-hover:from-blue-500/20 group-hover:to-indigo-500/20 group-hover:border-blue-500/30 transition-all">
@@ -163,7 +163,7 @@ export function SafeSelectionView({ onSelectSafe }: SafeSelectionViewProps) {
                             whileHover={{ scale: 1.02 }}
                             whileTap={{ scale: 0.98 }}
                             onClick={() => setIsCreateOpen(true)}
-                            className="p-4 md:p-5 rounded-3xl bg-white text-black flex flex-row md:flex-col items-center md:items-start gap-3 shadow-lg shadow-white/5 hover:bg-zinc-100 transition-colors"
+                            className="p-4 md:p-5 rounded-3xl bg-white text-black flex flex-row md:flex-col items-center md:items-start gap-3 shadow-lg shadow-white/5 hover:bg-zinc-100 transition-colors cursor-pointer"
                         >
                             <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-black/10 flex items-center justify-center shrink-0">
                                 <Plus className="w-4 h-4 md:w-5 md:h-5 text-black" />
@@ -178,7 +178,7 @@ export function SafeSelectionView({ onSelectSafe }: SafeSelectionViewProps) {
                             whileHover={{ scale: 1.02 }}
                             whileTap={{ scale: 0.98 }}
                             onClick={() => router.push('/drafts')}
-                            className="p-4 md:p-5 rounded-3xl bg-zinc-900 border border-zinc-800 flex flex-row md:flex-col items-center md:items-start gap-3 hover:bg-zinc-800 transition-colors"
+                            className="p-4 md:p-5 rounded-3xl bg-zinc-900 border border-zinc-800 flex flex-row md:flex-col items-center md:items-start gap-3 hover:bg-zinc-800 transition-colors cursor-pointer"
                         >
                             <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-zinc-800 flex items-center justify-center border border-zinc-700 shrink-0">
                                 <Shield className="w-4 h-4 md:w-5 md:h-5 text-white" />

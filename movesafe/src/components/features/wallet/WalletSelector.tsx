@@ -119,7 +119,7 @@ export function WalletSelector({ isOpen, onClose }: WalletSelectorProps) {
                 className={`
                   w-full flex items-center gap-3 px-4 py-3 rounded-xl border-2 transition-all
                   ${isInstalled
-                    ? 'border-zinc-700 hover:border-blue-500 hover:bg-blue-500/10'
+                    ? 'border-zinc-700 hover:border-blue-500 hover:bg-blue-500/10 cursor-pointer'
                     : 'border-zinc-800 opacity-50 cursor-not-allowed'
                   }
                 `}

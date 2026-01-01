@@ -240,7 +240,7 @@ export function SafeDashboardView({ safeAddress, onBack }: SafeDashboardViewProp
                 setActiveTab(id);
                 if (onSelect) onSelect();
             }}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${activeTab === id
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all cursor-pointer ${activeTab === id
                 ? 'bg-white text-black font-medium shadow-md shadow-white/5'
                 : 'text-zinc-500 hover:text-zinc-300 hover:bg-zinc-900'
                 }`}
@@ -265,7 +265,7 @@ export function SafeDashboardView({ safeAddress, onBack }: SafeDashboardViewProp
                             navigator.clipboard.writeText(safeAddress);
                             toast.success("Address copied");
                         }}
-                        className="flex items-center gap-2 text-xs font-mono text-zinc-500 hover:text-zinc-300 transition-colors bg-zinc-900/50 px-2 py-1 rounded-md w-fit"
+                        className="flex items-center gap-2 text-xs font-mono text-zinc-500 hover:text-zinc-300 transition-colors bg-zinc-900/50 px-2 py-1 rounded-md w-fit cursor-pointer"
                     >
                         {safeAddress.slice(0, 8)}...{safeAddress.slice(-6)}
                         <Copy className="w-3 h-3" />
@@ -285,7 +285,7 @@ export function SafeDashboardView({ safeAddress, onBack }: SafeDashboardViewProp
                 <div className="pt-6 border-t border-zinc-900">
                     <button
                         onClick={onBack}
-                        className="w-full flex items-center gap-3 px-4 py-3 text-zinc-500 hover:text-red-400 transition-colors text-sm font-medium"
+                        className="w-full flex items-center gap-3 px-4 py-3 text-zinc-500 hover:text-red-400 transition-colors text-sm font-medium cursor-pointer"
                     >
                         <LogOut className="w-4 h-4" />
                         Exit Safe
@@ -301,7 +301,7 @@ export function SafeDashboardView({ safeAddress, onBack }: SafeDashboardViewProp
                         {/* Mobile Hamburger */}
                         <button
                             onClick={() => setIsMobileMenuOpen(true)}
-                            className="md:hidden p-2 -ml-2 text-zinc-400 hover:text-white"
+                            className="md:hidden p-2 -ml-2 text-zinc-400 hover:text-white cursor-pointer"
                         >
                             <Menu className="w-6 h-6" />
                         </button>
@@ -320,7 +320,7 @@ export function SafeDashboardView({ safeAddress, onBack }: SafeDashboardViewProp
 
                     <button
                         onClick={() => setIsTxModalOpen(true)}
-                        className="flex items-center gap-2 bg-white text-black px-3 py-2 md:px-5 md:py-2.5 rounded-full font-bold text-xs md:text-sm hover:bg-zinc-200 transition-all active:scale-95 shadow-lg shadow-white/5"
+                        className="flex items-center gap-2 bg-white text-black px-3 py-2 md:px-5 md:py-2.5 rounded-full font-bold text-xs md:text-sm hover:bg-zinc-200 transition-all active:scale-95 shadow-lg shadow-white/5 cursor-pointer"
                     >
                         <Plus className="w-3 h-3 md:w-4 md:h-4" />
                         <span className="hidden md:inline">New Transaction</span>
@@ -520,7 +520,7 @@ export function SafeDashboardView({ safeAddress, onBack }: SafeDashboardViewProp
                                                 </div>
                                                 <button
                                                     onClick={() => { navigator.clipboard.writeText(displayAddress); toast.success("Copied"); }}
-                                                    className="p-2 hover:bg-zinc-800 rounded-lg text-zinc-500"
+                                                    className="p-2 hover:bg-zinc-800 rounded-lg text-zinc-500 cursor-pointer"
                                                 >
                                                     <Copy className="w-4 h-4" />
                                                 </button>
@@ -573,7 +573,7 @@ export function SafeDashboardView({ safeAddress, onBack }: SafeDashboardViewProp
                         >
                             <div className="p-6 pb-2 flex items-center justify-between">
                                 <h2 className="font-bold text-lg">{safe?.name || 'Safe'}</h2>
-                                <button onClick={() => setIsMobileMenuOpen(false)} className="p-2">
+                                <button onClick={() => setIsMobileMenuOpen(false)} className="p-2 cursor-pointer">
                                     <X className="w-6 h-6" />
                                 </button>
                             </div>
@@ -584,7 +584,7 @@ export function SafeDashboardView({ safeAddress, onBack }: SafeDashboardViewProp
                                 <NavItem id="signers" label="Signers" icon={Users} onSelect={() => setIsMobileMenuOpen(false)} />
                             </div>
                             <div className="p-6 border-t border-zinc-800">
-                                <button onClick={onBack} className="flex items-center gap-3 text-red-400 font-medium">
+                                <button onClick={onBack} className="flex items-center gap-3 text-red-400 font-medium cursor-pointer">
                                     <LogOut className="w-4 h-4" /> Exit
                                 </button>
                             </div>

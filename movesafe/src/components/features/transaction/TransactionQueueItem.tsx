@@ -114,7 +114,7 @@ export function TransactionQueueItem({
               <button
                 onClick={(e) => { e.stopPropagation(); onSign(); }}
                 disabled={isSigning}
-                className="flex items-center justify-center gap-2 px-4 py-1.5 bg-white text-black text-sm font-bold rounded-xl hover:bg-zinc-200 transition-all active:scale-95 disabled:opacity-50"
+                className="flex items-center justify-center gap-2 px-4 py-1.5 bg-white text-black text-sm font-bold rounded-xl hover:bg-zinc-200 transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
               >
                 {isSigning ? <Loader2 className="w-4 h-4 animate-spin" /> : <SignatureIcon className="w-4 h-4" />}
                 Sign
@@ -124,7 +124,7 @@ export function TransactionQueueItem({
               <button
                 onClick={(e) => { e.stopPropagation(); onExecute(); }}
                 disabled={isExecuting}
-                className="flex items-center justify-center gap-2 px-4 py-1.5 bg-green-600 text-white text-sm font-bold rounded-xl hover:bg-green-500 transition-all active:scale-95 disabled:opacity-50"
+                className="flex items-center justify-center gap-2 px-4 py-1.5 bg-green-600 text-white text-sm font-bold rounded-xl hover:bg-green-500 transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
               >
                 {isExecuting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
                 Execute
@@ -133,7 +133,7 @@ export function TransactionQueueItem({
           </div>
           <button
             onClick={(e) => { e.stopPropagation(); onDiscard(); }}
-            className="p-2 text-zinc-500 hover:text-red-400 hover:bg-red-500/10 rounded-xl transition-all"
+            className="p-2 text-zinc-500 hover:text-red-400 hover:bg-red-500/10 rounded-xl transition-all cursor-pointer"
           >
             <Trash2 className="w-5 h-5" />
           </button>
@@ -164,7 +164,7 @@ export function TransactionQueueItem({
                 </code>
                 <button
                   onClick={(e) => { e.stopPropagation(); copyToClipboard(recipient); }}
-                  className="p-2 hover:bg-zinc-800 rounded-lg text-zinc-400"
+                  className="p-2 hover:bg-zinc-800 rounded-lg text-zinc-400 cursor-pointer"
                 >
                   <Copy className="w-4 h-4" />
                 </button>
@@ -204,7 +204,7 @@ export function TransactionQueueItem({
               <button
                 onClick={(e) => { e.stopPropagation(); onSign(); }}
                 disabled={isSigning}
-                className="w-full flex items-center justify-center gap-2 py-3.5 bg-white text-black font-bold rounded-2xl hover:bg-zinc-200 transition-all active:scale-[0.98] disabled:opacity-50 shadow-xl shadow-white/5"
+                className="w-full flex items-center justify-center gap-2 py-3.5 bg-white text-black font-bold rounded-2xl hover:bg-zinc-200 transition-all active:scale-[0.98] disabled:opacity-50 shadow-xl shadow-white/5 cursor-pointer"
               >
                 {isSigning ? <Loader2 className="w-5 h-5 animate-spin" /> : <SignatureIcon className="w-5 h-5" />}
                 Sign Transaction
@@ -214,7 +214,7 @@ export function TransactionQueueItem({
               <button
                 onClick={(e) => { e.stopPropagation(); onExecute(); }}
                 disabled={isExecuting}
-                className="w-full flex items-center justify-center gap-2 py-3.5 bg-green-600 text-white font-bold rounded-2xl hover:bg-green-500 transition-all active:scale-[0.98] disabled:opacity-50 shadow-xl shadow-green-900/40"
+                className="w-full flex items-center justify-center gap-2 py-3.5 bg-green-600 text-white font-bold rounded-2xl hover:bg-green-500 transition-all active:scale-[0.98] disabled:opacity-50 shadow-xl shadow-green-900/40 cursor-pointer"
               >
                 {isExecuting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-5 h-5" />}
                 Execute Transaction
@@ -222,7 +222,7 @@ export function TransactionQueueItem({
             )}
             <button
               onClick={(e) => { e.stopPropagation(); onDiscard(); }}
-              className="w-full flex items-center justify-center gap-2 py-3.5 text-red-400 bg-red-500/5 hover:bg-red-500/10 border border-red-500/10 rounded-2xl transition-all"
+              className="w-full flex items-center justify-center gap-2 py-3.5 text-red-400 bg-red-500/5 hover:bg-red-500/10 border border-red-500/10 rounded-2xl transition-all cursor-pointer"
             >
               <Trash2 className="w-5 h-5" />
               Discard Transaction

@@ -49,7 +49,7 @@ export function ConfirmDialog({
                         onClick={onConfirm}
                         disabled={loading}
                         className={`
-              px-4 py-2 font-medium rounded-xl transition-colors disabled:opacity-50
+              px-4 py-2 font-medium rounded-xl transition-colors disabled:opacity-50 cursor-pointer
               ${variant === 'danger'
                                 ? 'bg-red-500 hover:bg-red-600 text-white shadow-lg shadow-red-500/20'
                                 : 'bg-white hover:bg-zinc-200 text-black shadow-lg shadow-white/5'
