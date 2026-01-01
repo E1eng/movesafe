@@ -1,8 +1,6 @@
 'use client';
 
 import React, { Component, ReactNode } from 'react';
-import { Card } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
 
 interface Props {
     children: ReactNode;
@@ -31,21 +29,20 @@ export class ErrorBoundary extends Component<Props, State> {
         if (this.state.hasError) {
             return (
                 <div className="flex items-center justify-center min-h-[200px] p-4">
-                    <Card className="max-w-md p-6 bg-red-50 dark:bg-red-900/10 border-red-200 dark:border-red-800">
-                        <h3 className="text-lg font-semibold text-red-700 dark:text-red-400 mb-2">
+                    <div className="max-w-md p-6 bg-red-500/10 border border-red-500/20 rounded-3xl">
+                        <h3 className="text-lg font-semibold text-red-400 mb-2">
                             Component Failed to Load
                         </h3>
-                        <p className="text-sm text-slate-600 dark:text-slate-300 mb-4">
+                        <p className="text-sm text-zinc-400 mb-4">
                             {this.state.error?.message || 'An unexpected error occurred.'}
                         </p>
-                        <Button
-                            variant="secondary"
-                            size="sm"
+                        <button
                             onClick={() => this.setState({ hasError: false })}
+                            className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white text-sm font-medium rounded-xl transition-colors"
                         >
                             Retry
-                        </Button>
-                    </Card>
+                        </button>
+                    </div>
                 </div>
             );
         }

@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { WalletSelector } from '@/components/WalletSelector';
+import { WalletSelector } from '@/components/features/wallet/WalletSelector';
 import { Shield } from 'lucide-react';
 import { useState } from 'react';
 

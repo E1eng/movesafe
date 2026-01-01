@@ -4,9 +4,7 @@ import { useState } from 'react';
 import { Send, AlertCircle, Wallet, Coins, Loader2 } from 'lucide-react';
 import { useWallet } from '@aptos-labs/wallet-adapter-react';
 import { Modal, ModalFooter } from '@/components/ui/Modal';
-import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { Badge } from '@/components/ui/Badge';
 import { validateAddress, validateAmount } from '@/lib/validateAddress';
 import { useTransaction } from '@/hooks/useTransaction';
 
@@ -31,7 +29,6 @@ export function NewTransactionModal({
   const [recipient, setRecipient] = useState('');
   const [amount, setAmount] = useState('');
 
-  // Validation states
   const [recipientError, setRecipientError] = useState<string | null>(null);
   const [amountError, setAmountError] = useState<string | null>(null);
 
@@ -111,38 +108,47 @@ export function NewTransactionModal({
           hint="The address that will receive the funds"
         />
 
-        <Input
-          label="Amount (MOVE)"
-          type="number"
-          value={amount}
-          onChange={(e) => validateAmountField(e.target.value)}
-          placeholder="0.0"
-          step="0.0001"
-          min="0"
-          icon={<Coins className="w-4 h-4" />}
-          error={amountError || undefined}
-          iconRight={<Badge variant="primary" size="sm">MOVE</Badge>}
-        />
+        <div className="space-y-2">
+          <Input
+            label="Amount (MOVE)"
+            type="number"
+            value={amount}
+            onChange={(e) => validateAmountField(e.target.value)}
+            placeholder="0.0"
+            step="0.0001"
+            min="0"
+            icon={<Coins className="w-4 h-4" />}
+            error={amountError || undefined}
+            iconRight={
+              <span className="text-xs px-2 py-0.5 bg-blue-500/10 text-blue-400 rounded-md border border-blue-500/20">MOVE</span>
+            }
+          />
+        </div>
 
         {error && (
-          <div className="flex items-start gap-2 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl">
-            <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
-            <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+          <div className="flex items-start gap-2 p-3 bg-red-500/10 border border-red-500/20 rounded-xl">
+            <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
+            <p className="text-sm text-red-400">{error}</p>
           </div>
         )}
 
         <ModalFooter>
-          <Button type="button" variant="ghost" onClick={handleClose}>
-            Cancel
-          </Button>
-          <Button
-            type="submit"
-            loading={loading}
-            disabled={!!recipientError || !!amountError || !recipient || !amount}
-            icon={<Send className="w-4 h-4" />}
+          <button
+            type="button"
+            onClick={handleClose}
+            className="px-4 py-2 text-zinc-400 hover:text-white transition-colors"
           >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            disabled={loading || !!recipientError || !!amountError || !recipient || !amount}
+            className="flex items-center gap-2 px-4 py-2 bg-white text-black font-medium rounded-xl hover:bg-zinc-200 transition-colors disabled:opacity-50"
+          >
+            {loading && <Loader2 className="w-4 h-4 animate-spin" />}
+            <Send className="w-4 h-4" />
             Create Proposal
-          </Button>
+          </button>
         </ModalFooter>
       </form>
     </Modal>

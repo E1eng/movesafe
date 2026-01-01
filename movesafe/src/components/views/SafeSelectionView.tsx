@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import { useWallet } from '@aptos-labs/wallet-adapter-react';
 import { Plus, Shield, Search, Loader2, ArrowRight, Wallet } from 'lucide-react';
 import { supabase, Safe } from '@/lib/supabase';
-import { CreateSafeModal } from '@/components/CreateSafeModal';
+import { CreateSafeModal } from '@/components/features/safe/CreateSafeModal';
 import { useRouter } from 'next/navigation';
 
 interface SafeSelectionViewProps {
