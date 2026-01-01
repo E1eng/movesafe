@@ -76,11 +76,23 @@ export function SafeSelectionView({ onSelectSafe }: SafeSelectionViewProps) {
             <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-900/10 rounded-full blur-[100px] pointer-events-none" />
 
             {/* Header */}
-            <div className="relative z-10 mb-8">
-                <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-zinc-500">
-                    Welcome Back
-                </h1>
-                <p className="text-zinc-400 mt-2">Select a treasury to manage</p>
+            <div className="relative z-10 mb-8 flex items-start justify-between">
+                <div>
+                    <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-zinc-500">
+                        Welcome Back
+                    </h1>
+                    <p className="text-zinc-400 mt-2">Select a treasury to manage</p>
+                </div>
+
+                <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => disconnect()}
+                    className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-zinc-900/50 border border-zinc-800 hover:border-red-500/30 hover:bg-red-500/5 transition-all group shrink-0 cursor-pointer"
+                >
+                    <LogOut className="w-4 h-4 text-zinc-500 group-hover:text-red-400 transition-colors" />
+                    <span className="text-xs font-bold text-zinc-400 group-hover:text-red-400 transition-colors hidden sm:inline">Logout</span>
+                </motion.button>
             </div>
 
             {loading ? (
@@ -174,20 +186,6 @@ export function SafeSelectionView({ onSelectSafe }: SafeSelectionViewProps) {
                             <div className="text-left min-w-0">
                                 <div className="font-bold text-white text-sm md:text-lg truncate">Drafts</div>
                                 <div className="text-[10px] md:text-xs text-zinc-500 font-medium truncate">View pending</div>
-                            </div>
-                        </motion.button>
-                        <motion.button
-                            whileHover={{ scale: 1.02 }}
-                            whileTap={{ scale: 0.98 }}
-                            onClick={() => disconnect()}
-                            className="p-4 md:p-5 rounded-3xl bg-zinc-900 border border-zinc-800 flex flex-row md:flex-col items-center md:items-start gap-3 hover:bg-zinc-800 transition-colors group/logout"
-                        >
-                            <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-zinc-800 flex items-center justify-center border border-zinc-700 shrink-0 group-hover/logout:border-red-500/30">
-                                <LogOut className="w-4 h-4 md:w-5 md:h-5 text-zinc-400 group-hover/logout:text-red-400 transition-colors" />
-                            </div>
-                            <div className="text-left min-w-0">
-                                <div className="font-bold text-white text-sm md:text-lg truncate group-hover/logout:text-red-400 transition-colors">Logout</div>
-                                <div className="text-[10px] md:text-xs text-zinc-500 font-medium truncate">Disconnect</div>
                             </div>
                         </motion.button>
                     </div>
