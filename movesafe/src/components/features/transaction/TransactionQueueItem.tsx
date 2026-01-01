@@ -3,6 +3,7 @@
 import { Clock, Check, Copy, ChevronDown, ChevronUp, Signature as SignatureIcon, Zap, Trash2, Loader2 } from 'lucide-react';
 import { Transaction, Signature } from '@/lib/supabase';
 import { useState } from 'react';
+import { useMovePrice } from '@/hooks/useMovePrice';
 
 interface TransactionQueueItemProps {
   transaction: Transaction;
@@ -30,6 +31,7 @@ export function TransactionQueueItem({
   executingTxId,
 }: TransactionQueueItemProps) {
   const [expanded, setExpanded] = useState(false);
+  const { price: movePrice } = useMovePrice();
 
   const signatureCount = signatures.length;
   const progress = Math.min((signatureCount / threshold) * 100, 100);
@@ -80,6 +82,11 @@ export function TransactionQueueItem({
           <div className="flex items-center gap-2 mb-1">
             <h4 className="font-semibold text-white truncate">
               Send {formatAmount(amount)} MOVE
+              {movePrice && (
+                <span className="ml-2 text-xs font-normal text-zinc-500">
+                  (≈ ${(parseFloat(amount) / 100000000 * movePrice).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})
+                </span>
+              )}
             </h4>
             {isReady ? (
               <span className="text-xs px-2 py-0.5 bg-green-500/10 text-green-400 rounded-md border border-green-500/20">Ready</span>

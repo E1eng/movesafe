@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Send, AlertCircle, Wallet, Coins, Loader2, MessageSquare } from 'lucide-react';
 import { useWallet } from '@aptos-labs/wallet-adapter-react';
 import { Modal, ModalFooter } from '@/components/ui/Modal';
+import { useMovePrice } from '@/hooks/useMovePrice';
 import { Input } from '@/components/ui/Input';
 import { validateAddress, validateAmount } from '@/lib/validateAddress';
 import { useTransaction } from '@/hooks/useTransaction';
@@ -29,6 +30,7 @@ export function NewTransactionModal({
   const [recipient, setRecipient] = useState('');
   const [amount, setAmount] = useState('');
   const [memo, setMemo] = useState('');
+  const { price: movePrice } = useMovePrice();
 
   const [recipientError, setRecipientError] = useState<string | null>(null);
   const [amountError, setAmountError] = useState<string | null>(null);
@@ -126,6 +128,11 @@ export function NewTransactionModal({
               <span className="text-xs px-2 py-0.5 bg-blue-500/10 text-blue-400 rounded-md border border-blue-500/20">MOVE</span>
             }
           />
+          {movePrice && amount && !isNaN(parseFloat(amount)) && (
+            <p className="text-xs text-zinc-500 text-right mt-1">
+              ≈ ${(parseFloat(amount) * movePrice).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD
+            </p>
+          )}
         </div>
 
         <div className="space-y-2">

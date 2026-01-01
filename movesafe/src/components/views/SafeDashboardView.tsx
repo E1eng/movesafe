@@ -10,6 +10,7 @@ import { supabase, Safe, Transaction } from '@/lib/supabase';
 import { TransactionQueueItem } from '@/components/features/transaction/TransactionQueueItem';
 import { NewTransactionModal } from '@/components/features/transaction/NewTransactionModal';
 import { useWallet } from '@aptos-labs/wallet-adapter-react';
+import { useMovePrice } from '@/hooks/useMovePrice';
 import { aptos } from '@/lib/movement';
 import { toast } from 'sonner';
 import { assembleMultiSigAuthenticator, SignatureData } from '@/lib/multisig';
@@ -34,6 +35,7 @@ export function SafeDashboardView({ safeAddress, onBack }: SafeDashboardViewProp
     const [transactions, setTransactions] = useState<ExtendedTransaction[]>([]);
     const [history, setHistory] = useState<ExtendedTransaction[]>([]);
     const [balance, setBalance] = useState<number>(0);
+    const { price: movePrice } = useMovePrice();
     const [loading, setLoading] = useState(true);
     const [isTxModalOpen, setIsTxModalOpen] = useState(false);
 
@@ -69,13 +71,13 @@ export function SafeDashboardView({ safeAddress, onBack }: SafeDashboardViewProp
 
             setHistory(historyData as ExtendedTransaction[] || []);
 
-            // 3. Fetch Balance (APT)
+            // 3. Fetch Balance (MOVE)
             try {
                 const resources = await aptos.getAccountResources({ accountAddress: safeAddress });
                 const coinResource = resources.find((r) => r.type === "0x1::coin::CoinStore<0x1::aptos_coin::AptosCoin>");
                 if (coinResource) {
                     const val = (coinResource.data as any).coin.value;
-                    setBalance(Number(val) / 100_000_000); // 8 decimals for APT
+                    setBalance(Number(val) / 100_000_000); // 8 decimals for MOVE
                 }
             } catch (err) {
                 console.log("Balance fetch failed (safe might be new)", err);
@@ -278,8 +280,13 @@ export function SafeDashboardView({ safeAddress, onBack }: SafeDashboardViewProp
                 <div className="h-20 flex items-center justify-between px-8 border-b border-zinc-800/50 z-20 bg-black/50 backdrop-blur-sm">
                     <div>
                         <h1 className="text-sm font-medium text-zinc-500">Total Balance</h1>
-                        <p className="text-2xl font-bold tracking-tight">${(balance * 6.5).toLocaleString('en-US', { minimumFractionDigits: 2 })} <span className="text-base font-normal text-zinc-600">USD</span></p>
-                        {/* Assuming 1 APT = $6.5 Mock Price for now */}
+                        <p className="text-2xl font-bold tracking-tight">{balance.toLocaleString('en-US', { minimumFractionDigits: 4 })} <span className="text-base font-normal text-zinc-600">MOVE</span></p>
+                        {movePrice && (
+                            <p className="text-sm text-zinc-500 mt-1">
+                                ≈ ${(balance * movePrice).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD
+                                <span className="text-zinc-600 ml-1">(@ ${movePrice.toFixed(4)})</span>
+                            </p>
+                        )}
                     </div>
 
                     <button
@@ -387,6 +394,11 @@ export function SafeDashboardView({ safeAddress, onBack }: SafeDashboardViewProp
                                                 <div className="flex-1 min-w-0">
                                                     <div className="font-medium text-white">
                                                         Sent {formatAmount(amount)} MOVE
+                                                        {movePrice && (
+                                                            <span className="ml-2 text-xs font-normal text-zinc-500">
+                                                                (≈ ${(parseFloat(amount) / 100000000 * movePrice).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})
+                                                            </span>
+                                                        )}
                                                     </div>
                                                     <div className="text-xs text-zinc-500 flex items-center gap-2">
                                                         To: <code className="font-mono bg-zinc-800 px-1 py-0.5 rounded">{recipient.slice(0, 8)}...{recipient.slice(-6)}</code>
@@ -427,9 +439,12 @@ export function SafeDashboardView({ safeAddress, onBack }: SafeDashboardViewProp
                                     <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
                                         <Coins className="w-24 h-24 text-white" />
                                     </div>
-                                    <h4 className="text-zinc-500 font-medium text-sm mb-2">Aptos Coin</h4>
-                                    <div className="text-3xl font-bold mb-1">{balance.toFixed(4)} <span className="text-lg text-zinc-500">APT</span></div>
-                                    <div className="text-sm text-zinc-600">≈ ${(balance * 6.5).toFixed(2)} USD</div>
+                                    <h4 className="text-zinc-500 font-medium text-sm mb-2">MOVE Token</h4>
+                                    <div className="text-3xl font-bold mb-1">{balance.toFixed(4)} <span className="text-lg text-zinc-500">MOVE</span></div>
+                                    {movePrice && (
+                                        <div className="text-sm text-zinc-500">≈ ${(balance * movePrice).toFixed(2)} USD</div>
+                                    )}
+                                    <div className="text-sm text-zinc-600">Movement Network</div>
                                 </div>
                                 {/* Placeholder for other tokens */}
                                 <div className="p-6 border border-dashed border-zinc-800 rounded-3xl flex items-center justify-center text-zinc-600 text-sm h-full min-h-[160px]">
