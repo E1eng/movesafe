@@ -71,7 +71,7 @@ export function SafeSelectionView({ onSelectSafe }: SafeSelectionViewProps) {
     };
 
     return (
-        <div className="h-full flex flex-col p-10 bg-black relative overflow-hidden">
+        <div className="h-full flex flex-col p-6 pt-safe md:p-10 bg-black relative overflow-hidden">
             {/* Background elements */}
             <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-900/10 rounded-full blur-[100px] pointer-events-none" />
 
@@ -88,15 +88,15 @@ export function SafeSelectionView({ onSelectSafe }: SafeSelectionViewProps) {
                     <Loader2 className="w-8 h-8 text-zinc-500 animate-spin" />
                 </div>
             ) : (
-                <div className="flex-1 flex gap-8">
+                <div className="flex-1 flex flex-col md:flex-row gap-6 md:gap-8 min-h-0">
                     {/* Main Grid: Safes */}
-                    <div className="flex-1 overflow-y-auto pr-2">
+                    <div className="flex-1 overflow-y-auto pr-2 overscroll-contain pb-safe order-2 md:order-1">
                         {safes.length > 0 ? (
                             <motion.div
                                 variants={container}
                                 initial="hidden"
                                 animate="show"
-                                className="grid grid-cols-2 gap-4"
+                                className="grid grid-cols-1 md:grid-cols-2 gap-4"
                             >
                                 {safes.map((safe) => (
                                     <motion.button
@@ -144,21 +144,21 @@ export function SafeSelectionView({ onSelectSafe }: SafeSelectionViewProps) {
                     </div>
 
                     {/* Right Sidebar: Actions */}
-                    <div className="w-64 flex flex-col gap-4">
-                        <div className="text-xs font-bold text-zinc-500 uppercase tracking-widest px-1">Actions</div>
+                    <div className="w-full md:w-64 grid grid-cols-2 md:flex md:flex-col gap-3 md:gap-4 order-1 md:order-2 shrink-0">
+                        <div className="col-span-2 text-xs font-bold text-zinc-500 uppercase tracking-widest px-1">Actions</div>
 
                         <motion.button
                             whileHover={{ scale: 1.02 }}
                             whileTap={{ scale: 0.98 }}
                             onClick={() => setIsCreateOpen(true)}
-                            className="p-5 rounded-3xl bg-white text-black flex flex-col gap-3 shadow-lg shadow-white/5 hover:bg-zinc-100 transition-colors"
+                            className="p-4 md:p-5 rounded-3xl bg-white text-black flex flex-row md:flex-col items-center md:items-start gap-3 shadow-lg shadow-white/5 hover:bg-zinc-100 transition-colors"
                         >
-                            <div className="w-10 h-10 rounded-full bg-black/10 flex items-center justify-center">
-                                <Plus className="w-5 h-5 text-black" />
+                            <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-black/10 flex items-center justify-center shrink-0">
+                                <Plus className="w-4 h-4 md:w-5 md:h-5 text-black" />
                             </div>
-                            <div className="text-left">
-                                <div className="font-bold text-lg">Create New</div>
-                                <div className="text-xs text-zinc-500 font-medium">Deploy a new safe</div>
+                            <div className="text-left min-w-0">
+                                <div className="font-bold text-sm md:text-lg truncate">Create New</div>
+                                <div className="text-[10px] md:text-xs text-zinc-500 font-medium truncate">Deploy a safe</div>
                             </div>
                         </motion.button>
 
@@ -166,14 +166,14 @@ export function SafeSelectionView({ onSelectSafe }: SafeSelectionViewProps) {
                             whileHover={{ scale: 1.02 }}
                             whileTap={{ scale: 0.98 }}
                             onClick={() => router.push('/drafts')}
-                            className="p-5 rounded-3xl bg-zinc-900 border border-zinc-800 flex flex-col gap-3 hover:bg-zinc-800 transition-colors"
+                            className="p-4 md:p-5 rounded-3xl bg-zinc-900 border border-zinc-800 flex flex-row md:flex-col items-center md:items-start gap-3 hover:bg-zinc-800 transition-colors"
                         >
-                            <div className="w-10 h-10 rounded-full bg-zinc-800 flex items-center justify-center border border-zinc-700">
-                                <Shield className="w-5 h-5 text-white" />
+                            <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-zinc-800 flex items-center justify-center border border-zinc-700 shrink-0">
+                                <Shield className="w-4 h-4 md:w-5 md:h-5 text-white" />
                             </div>
-                            <div className="text-left">
-                                <div className="font-bold text-white text-lg">Pending Drafts</div>
-                                <div className="text-xs text-zinc-500 font-medium">View your invites</div>
+                            <div className="text-left min-w-0">
+                                <div className="font-bold text-white text-sm md:text-lg truncate">Drafts</div>
+                                <div className="text-[10px] md:text-xs text-zinc-500 font-medium truncate">View pending</div>
                             </div>
                         </motion.button>
                     </div>

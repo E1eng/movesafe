@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     ArrowLeft, Copy, Plus, Menu, CheckCircle2,
-    Wallet, Users, History, Settings, Coins, LogOut, Loader2
+    Wallet, Users, History, Settings, Coins, LogOut, Loader2, X
 } from 'lucide-react';
 import { supabase, Safe, Transaction } from '@/lib/supabase';
 import { TransactionQueueItem } from '@/components/features/transaction/TransactionQueueItem';
@@ -38,6 +38,7 @@ export function SafeDashboardView({ safeAddress, onBack }: SafeDashboardViewProp
     const { price: movePrice } = useMovePrice();
     const [loading, setLoading] = useState(true);
     const [isTxModalOpen, setIsTxModalOpen] = useState(false);
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
     // Action States
     const [signingTxId, setSigningTxId] = useState<string | null>(null);
@@ -233,8 +234,8 @@ export function SafeDashboardView({ safeAddress, onBack }: SafeDashboardViewProp
 
     return (
         <div className="flex h-full bg-black text-white">
-            {/* LEFT SIDEBAR */}
-            <div className="w-[260px] flex flex-col border-r border-zinc-800/50 p-6 bg-zinc-950/30">
+            {/* LEFT SIDEBAR - Desktop Only */}
+            <div className="hidden md:flex w-[260px] flex-col border-r border-zinc-800/50 p-6 bg-zinc-950/30">
                 {/* Safe Header */}
                 <div className="mb-8">
                     <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center mb-4 shadow-lg shadow-blue-900/20">
@@ -277,16 +278,26 @@ export function SafeDashboardView({ safeAddress, onBack }: SafeDashboardViewProp
             {/* RIGHT CONTENT */}
             <div className="flex-1 flex flex-col min-w-0 bg-transparent relative">
                 {/* Top Bar */}
-                <div className="h-20 flex items-center justify-between px-8 border-b border-zinc-800/50 z-20 bg-black/50 backdrop-blur-sm">
-                    <div>
-                        <h1 className="text-sm font-medium text-zinc-500">Total Balance</h1>
-                        <p className="text-2xl font-bold tracking-tight">{balance.toLocaleString('en-US', { minimumFractionDigits: 4 })} <span className="text-base font-normal text-zinc-600">MOVE</span></p>
-                        {movePrice && (
-                            <p className="text-sm text-zinc-500 mt-1">
-                                ≈ ${(balance * movePrice).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD
-                                <span className="text-zinc-600 ml-1">(@ ${movePrice.toFixed(4)})</span>
-                            </p>
-                        )}
+                <div className="h-20 min-h-[5rem] flex items-center justify-between px-8 border-b border-zinc-800/50 z-20 bg-black/50 backdrop-blur-sm pt-safe md:pt-0 sticky top-0">
+                    <div className="flex items-center gap-4">
+                        {/* Mobile Hamburger */}
+                        <button
+                            onClick={() => setIsMobileMenuOpen(true)}
+                            className="md:hidden p-2 -ml-2 text-zinc-400 hover:text-white"
+                        >
+                            <Menu className="w-6 h-6" />
+                        </button>
+
+                        <div>
+                            <h1 className="text-sm font-medium text-zinc-500">Total Balance</h1>
+                            <p className="text-2xl font-bold tracking-tight">{balance.toLocaleString('en-US', { minimumFractionDigits: 4 })} <span className="text-base font-normal text-zinc-600">MOVE</span></p>
+                            {movePrice && (
+                                <p className="text-sm text-zinc-500 mt-1">
+                                    ≈ ${(balance * movePrice).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD
+                                    <span className="text-zinc-600 ml-1">(@ ${movePrice.toFixed(4)})</span>
+                                </p>
+                            )}
+                        </div>
                     </div>
 
                     <button
@@ -299,7 +310,7 @@ export function SafeDashboardView({ safeAddress, onBack }: SafeDashboardViewProp
                 </div>
 
                 {/* Tab Content */}
-                <div className="flex-1 overflow-y-auto p-8">
+                <div className="flex-1 overflow-y-auto p-8 overscroll-contain pb-safe">
                     <AnimatePresence mode="wait">
                         {activeTab === 'queue' && (
                             <motion.div
@@ -508,6 +519,42 @@ export function SafeDashboardView({ safeAddress, onBack }: SafeDashboardViewProp
                     }}
                 />
             </div>
+
+            {/* Mobile Navigation Drawer */}
+            <AnimatePresence>
+                {isMobileMenuOpen && (
+                    <>
+                        <motion.div
+                            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                            onClick={() => setIsMobileMenuOpen(false)}
+                            className="fixed inset-0 bg-black/80 backdrop-blur-sm z-40 md:hidden"
+                        />
+                        <motion.div
+                            initial={{ x: '-100%' }} animate={{ x: 0 }} exit={{ x: '-100%' }}
+                            transition={{ type: "spring", damping: 30, stiffness: 300 }}
+                            className="fixed inset-y-0 left-0 w-[280px] bg-zinc-900 border-r border-zinc-800 z-50 flex flex-col md:hidden pt-safe pb-safe"
+                        >
+                            <div className="p-6 pb-2 flex items-center justify-between">
+                                <h2 className="font-bold text-lg">{safe?.name || 'Safe'}</h2>
+                                <button onClick={() => setIsMobileMenuOpen(false)} className="p-2">
+                                    <X className="w-6 h-6" />
+                                </button>
+                            </div>
+                            <div className="flex-1 px-4 space-y-1 overflow-y-auto">
+                                <NavItem id="queue" label="Queue" icon={History} />
+                                <NavItem id="history" label="History" icon={CheckCircle2} />
+                                <NavItem id="assets" label="Assets" icon={Coins} />
+                                <NavItem id="signers" label="Signers" icon={Users} />
+                            </div>
+                            <div className="p-6 border-t border-zinc-800">
+                                <button onClick={onBack} className="flex items-center gap-3 text-red-400 font-medium">
+                                    <LogOut className="w-4 h-4" /> Exit
+                                </button>
+                            </div>
+                        </motion.div>
+                    </>
+                )}
+            </AnimatePresence>
         </div>
     );
 }
