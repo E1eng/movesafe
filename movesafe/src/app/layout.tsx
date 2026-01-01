@@ -26,14 +26,16 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="scroll-smooth">
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen bg-slate-50 dark:bg-slate-950`}>
+    <html lang="en">
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased bg-white dark:bg-black text-slate-900 dark:text-slate-50`}>
         <ToastProvider>
           <WalletProvider>
-            <div className="min-h-screen lg:grid lg:grid-cols-[auto_1fr]">
+            <div className="flex min-h-screen">
               <Sidebar />
-              <main className="min-w-0 p-4 lg:p-8 bg-slate-50 dark:bg-slate-950 transition-all duration-300">
-                {children}
+              <main className="flex-1 p-6 md:p-8 overflow-y-auto h-screen">
+                <div className="max-w-6xl mx-auto w-full">
+                  {children}
+                </div>
               </main>
             </div>
           </WalletProvider>

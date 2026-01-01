@@ -50,7 +50,7 @@ export function ConnectionStatus() {
     }
 
     return (
-        <Badge variant="success" size="sm" dot pulse>
+        <Badge variant="success" size="sm" dot>
             <Wifi className="w-3 h-3" />
             {latency ? `${latency}ms` : 'Online'}
         </Badge>

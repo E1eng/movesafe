@@ -20,6 +20,8 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     <ErrorBoundary>
       <AptosWalletAdapterProvider
         autoConnect={true}
+        optInWallets={[]}
+        disableTelemetry={true}
         dappConfig={{
           network: Network.TESTNET,
         }}

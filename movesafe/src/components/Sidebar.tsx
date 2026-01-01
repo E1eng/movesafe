@@ -63,13 +63,13 @@ export function Sidebar() {
         `}
             >
                 {/* Logo */}
-                <div className="p-4 border-b border-slate-100 dark:border-slate-800">
+                <div className="p-6">
                     <Link href="/" className={`flex items-center gap-3 ${collapsed ? 'justify-center' : ''}`}>
-                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/25">
-                            <Shield className="w-5 h-5 text-white" />
+                        <div className="w-8 h-8 rounded-lg bg-slate-900 dark:bg-white flex items-center justify-center">
+                            <Shield className="w-4 h-4 text-white dark:text-slate-900" />
                         </div>
                         {!collapsed && (
-                            <span className="text-xl font-bold text-slate-900 dark:text-white">
+                            <span className="text-lg font-bold tracking-tight text-slate-900 dark:text-white">
                                 MoveSafe
                             </span>
                         )}
@@ -79,7 +79,7 @@ export function Sidebar() {
                 {/* Collapse toggle */}
                 <button
                     onClick={() => setCollapsed(!collapsed)}
-                    className="absolute -right-3 top-16 w-6 h-6 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-full flex items-center justify-center shadow-md hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors z-10"
+                    className="absolute -right-3 top-8 w-6 h-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-full flex items-center justify-center hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors z-10"
                 >
                     {collapsed ? (
                         <ChevronRight className="w-3.5 h-3.5 text-slate-500" />
@@ -90,20 +90,19 @@ export function Sidebar() {
 
                 {/* Safe-specific nav */}
                 {safeAddress && (
-                    <div className="p-3 border-b border-slate-100 dark:border-slate-800">
+                    <div className="px-3 mb-2">
                         <Link
                             href="/safes"
                             className={`flex items-center gap-2 px-3 py-2 text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors ${collapsed ? 'justify-center' : ''}`}
                         >
                             <ArrowLeft className="w-4 h-4" />
-                            {!collapsed && <span className="text-sm">All Safes</span>}
+                            {!collapsed && <span className="text-sm font-medium">Back</span>}
                         </Link>
                     </div>
                 )}
 
                 {/* Navigation */}
-                <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
-                    {/* Show safe nav if on safe page, otherwise main nav */}
+                <nav className="flex-1 px-3 space-y-0.5 overflow-y-auto">
                     {(safeAddress ? safeNavItems : mainNavItems).map((item) => {
                         const Icon = item.icon;
                         const active = isActive(item.href, item.exact);
@@ -113,71 +112,52 @@ export function Sidebar() {
                                 key={item.href}
                                 href={item.href}
                                 className={`
-                  flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200
+                  flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200
                   ${collapsed ? 'justify-center' : ''}
                   ${active
-                                        ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 font-semibold'
-                                        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'
+                                        ? 'bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white font-medium'
+                                        : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-900'
                                     }
                 `}
                                 title={collapsed ? item.label : undefined}
                             >
-                                <Icon className="w-5 h-5 flex-shrink-0" />
+                                <Icon className="w-4 h-4 flex-shrink-0" />
                                 {!collapsed && <span className="text-sm">{item.label}</span>}
                             </Link>
                         );
                     })}
                 </nav>
 
-                {/* Connection Status */}
-                <div className="p-3 border-t border-slate-100 dark:border-slate-800">
+                {/* Footer */}
+                <div className="p-3 border-t border-slate-200 dark:border-slate-800 space-y-2">
                     {!collapsed && <ConnectionStatus />}
-                </div>
 
-                {/* Wallet Section */}
-                <div className="p-3 border-t border-slate-100 dark:border-slate-800">
                     {connected && account ? (
-                        <div className={`${collapsed ? 'flex flex-col items-center gap-2' : ''}`}>
-                            <div className={`flex items-center gap-2 px-3 py-2 bg-slate-100 dark:bg-slate-800 rounded-lg ${collapsed ? 'justify-center' : ''}`}>
-                                <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse flex-shrink-0" />
-                                {!collapsed && (
-                                    <span className="text-sm font-mono text-slate-700 dark:text-slate-200 truncate">
-                                        {account.address.toString().slice(0, 8)}...
-                                    </span>
-                                )}
-                            </div>
+                        <div className={`flex items-center gap-2 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-800 ${collapsed ? 'justify-center p-2' : ''}`}>
+                            <div className="w-2 h-2 rounded-full bg-green-500 flex-shrink-0" />
                             {!collapsed && (
-                                <button
-                                    onClick={disconnect}
-                                    className="mt-2 w-full flex items-center justify-center gap-2 px-3 py-2 text-sm text-slate-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-                                >
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-xs font-mono text-slate-600 dark:text-slate-400 truncate">
+                                        {account.address.toString().slice(0, 6)}...{account.address.toString().slice(-4)}
+                                    </p>
+                                </div>
+                            )}
+                            {!collapsed && (
+                                <button onClick={disconnect} className="text-slate-400 hover:text-red-500">
                                     <LogOut className="w-4 h-4" />
-                                    Disconnect
                                 </button>
                             )}
                         </div>
                     ) : (
                         <button
                             onClick={() => setShowWalletSelector(true)}
-                            className={`w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white rounded-xl font-medium shadow-lg shadow-blue-500/25 transition-all ${collapsed ? '' : ''}`}
+                            className={`w-full flex items-center justify-center gap-2 px-4 py-2 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-lg text-sm font-medium hover:opacity-90 transition-opacity ${collapsed ? 'px-2' : ''}`}
                         >
                             <Wallet className="w-4 h-4" />
-                            {!collapsed && <span>Connect</span>}
+                            {!collapsed && <span>Connect Wallet</span>}
                         </button>
                     )}
                 </div>
-
-                {/* Safe address display */}
-                {safeAddress && !collapsed && (
-                    <div className="p-3 border-t border-slate-100 dark:border-slate-800">
-                        <div className="p-3 bg-slate-50 dark:bg-slate-900 rounded-xl">
-                            <p className="text-xs text-slate-500 mb-1">Current Safe</p>
-                            <p className="text-xs font-mono text-slate-700 dark:text-slate-300 truncate">
-                                {safeAddress.slice(0, 12)}...{safeAddress.slice(-6)}
-                            </p>
-                        </div>
-                    </div>
-                )}
             </aside>
 
             <WalletSelector

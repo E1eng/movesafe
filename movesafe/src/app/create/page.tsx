@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useWallet } from '@aptos-labs/wallet-adapter-react';
-import { ArrowLeft, Plus, Trash2, Users, Shield, Link as LinkIcon } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Users, Shield, Link as LinkIcon, Check } from 'lucide-react';
 import { supabase, SafeDraft } from '@/lib/supabase';
 import { Button } from '@/components/ui/Button';
 import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/Card';
@@ -21,7 +21,6 @@ export default function CreateSafePage() {
   const [owners, setOwners] = useState<string[]>(['']);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
 
   const connectedPubKey = account?.publicKey?.toString().toLowerCase() || '';
 
@@ -94,7 +93,7 @@ export default function CreateSafePage() {
 
         router.push(`/draft/${data.id}?admin=${adminToken}`);
       } else {
-        // Manual mode - create safe directly
+        // Manual mode
         const validOwners = owners.filter((o) => o.trim()).map((o) => o.toLowerCase());
 
         // Generate safe address (simplified)
@@ -132,149 +131,161 @@ export default function CreateSafePage() {
   };
 
   return (
-    <div className="p-6 lg:p-8 max-w-2xl mx-auto">
-      {/* Back Button */}
+    <div className="max-w-xl mx-auto py-12 px-4">
       <Link
         href="/safes"
-        className="inline-flex items-center gap-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white mb-8 transition-colors"
+        className="inline-flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-slate-900 dark:hover:text-white mb-8 transition-colors"
       >
         <ArrowLeft className="w-4 h-4" />
         Back to Safes
       </Link>
 
-      {/* Main Card */}
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">
+          Create New Safe
+        </h1>
+        <p className="text-slate-500 dark:text-slate-400">
+          Configure security settings and owners.
+        </p>
+      </div>
+
       <Card>
-        <CardHeader>
-          <div>
-            <CardTitle className="text-2xl">Create New Safe</CardTitle>
-            <CardDescription className="mt-1">
-              Set up a multisig wallet with K-of-N signature requirements
-            </CardDescription>
+        <form onSubmit={handleCreateSafe} className="p-6 space-y-8">
+
+          {/* Mode Selection */}
+          <div className="grid grid-cols-2 gap-4">
+            <button
+              type="button"
+              onClick={() => setMode('invite')}
+              className={`
+                relative flex flex-col items-center gap-3 p-4 rounded-xl border transition-all text-left
+                ${mode === 'invite'
+                  ? 'border-slate-900 dark:border-white ring-1 ring-slate-900 dark:ring-white bg-slate-50 dark:bg-slate-800'
+                  : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 bg-white dark:bg-slate-900'
+                }
+              `}
+            >
+              <div className={`p-2 rounded-lg ${mode === 'invite' ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900' : 'bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white'}`}>
+                <LinkIcon className="w-5 h-5" />
+              </div>
+              <div className="flex flex-col items-center">
+                <span className="font-semibold text-slate-900 dark:text-white">Invite Owners</span>
+                <span className="text-xs text-slate-500">Send a link to join</span>
+              </div>
+              {mode === 'invite' && (
+                <div className="absolute top-2 right-2">
+                  <Check className="w-4 h-4 text-slate-900 dark:text-white" />
+                </div>
+              )}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setMode('manual')}
+              className={`
+                relative flex flex-col items-center gap-3 p-4 rounded-xl border transition-all text-left
+                ${mode === 'manual'
+                  ? 'border-slate-900 dark:border-white ring-1 ring-slate-900 dark:ring-white bg-slate-50 dark:bg-slate-800'
+                  : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 bg-white dark:bg-slate-900'
+                }
+              `}
+            >
+              <div className={`p-2 rounded-lg ${mode === 'manual' ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900' : 'bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white'}`}>
+                <Users className="w-5 h-5" />
+              </div>
+              <div className="flex flex-col items-center">
+                <span className="font-semibold text-slate-900 dark:text-white">Manual Setup</span>
+                <span className="text-xs text-slate-500">Enter public keys</span>
+              </div>
+              {mode === 'manual' && (
+                <div className="absolute top-2 right-2">
+                  <Check className="w-4 h-4 text-slate-900 dark:text-white" />
+                </div>
+              )}
+            </button>
           </div>
-        </CardHeader>
 
-        {/* Mode Selector */}
-        <div className="grid grid-cols-2 gap-2 mb-8">
-          <button
-            type="button"
-            onClick={() => setMode('invite')}
-            className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-medium border-2 transition-all ${mode === 'invite'
-              ? 'bg-blue-50 dark:bg-blue-900/30 border-blue-500 text-blue-700 dark:text-blue-300'
-              : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-600'
-              }`}
-          >
-            <LinkIcon className="w-4 h-4" />
-            Invite to Join
-          </button>
-          <button
-            type="button"
-            onClick={() => setMode('manual')}
-            className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-medium border-2 transition-all ${mode === 'manual'
-              ? 'bg-blue-50 dark:bg-blue-900/30 border-blue-500 text-blue-700 dark:text-blue-300'
-              : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-600'
-              }`}
-          >
-            <Users className="w-4 h-4" />
-            Manual Owners
-          </button>
-        </div>
-
-        <form onSubmit={handleCreateSafe} className="space-y-6">
-          {/* Safe Name */}
-          <Input
-            label="Safe Name"
-            value={safeName}
-            onChange={(e) => setSafeName(e.target.value)}
-            placeholder="e.g., Team Treasury"
-            required
-          />
-
-          {/* Threshold */}
-          <Input
-            label="Threshold (Required Signatures)"
-            type="number"
-            value={threshold}
-            onChange={(e) => setThreshold(Math.max(1, parseInt(e.target.value) || 1))}
-            min={1}
-            max={mode === 'invite' ? ownerLimit : owners.filter((o) => o.trim()).length || 10}
-            hint="Number of signatures required to execute transactions"
-          />
-
-          {/* Invite Mode - Owner Limit */}
-          {mode === 'invite' && (
+          <div className="space-y-4">
             <Input
-              label="Owner Limit (N)"
-              type="number"
-              value={ownerLimit}
-              onChange={(e) => setOwnerLimit(Math.max(1, parseInt(e.target.value) || 1))}
-              min={1}
-              hint="How many wallets can join this safe via the invite link"
+              label="Safe Name"
+              value={safeName}
+              onChange={(e) => setSafeName(e.target.value)}
+              placeholder="e.g. Treasury v1"
+              required
             />
-          )}
 
-          {/* Manual Mode - Owner List */}
+            <div className="grid grid-cols-2 gap-4">
+              <Input
+                label="Threshold"
+                type="number"
+                value={threshold}
+                onChange={(e) => setThreshold(Math.max(1, parseInt(e.target.value)))}
+                min={1}
+                hint="Required signatures"
+              />
+
+              {mode === 'invite' ? (
+                <Input
+                  label="Total Owners"
+                  type="number"
+                  value={ownerLimit}
+                  onChange={(e) => setOwnerLimit(Math.max(1, parseInt(e.target.value)))}
+                  min={1}
+                  hint="Owners to invite"
+                />
+              ) : (
+                <div className="opacity-75">
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+                    Total Owners
+                  </label>
+                  <div className="w-full px-4 py-2.5 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white">
+                    {owners.length}
+                  </div>
+                  <p className="mt-1.5 text-sm text-slate-500">Based on list below</p>
+                </div>
+              )}
+            </div>
+          </div>
+
           {mode === 'manual' && (
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
-                  Owner Public Keys
-                </label>
+            <div className="space-y-3 pt-4 border-t border-slate-100 dark:border-slate-800">
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-medium text-slate-900 dark:text-white">Owner Keys</label>
                 <Button type="button" variant="ghost" size="sm" onClick={addOwner}>
-                  <Plus className="w-4 h-4" />
-                  Add Owner
+                  <Plus className="w-4 h-4" /> Add
                 </Button>
               </div>
-              <div className="space-y-3">
-                {owners.map((owner, index) => (
-                  <div key={index} className="flex gap-2">
+
+              <div className="space-y-2">
+                {owners.map((owner, idx) => (
+                  <div key={idx} className="flex gap-2">
                     <Input
                       value={owner}
-                      onChange={(e) => updateOwner(index, e.target.value)}
-                      placeholder="0x... (Public Key)"
-                      className="flex-1"
+                      onChange={(e) => updateOwner(idx, e.target.value)}
+                      placeholder="Ed25519 Public Key..."
+                      className="font-mono text-xs"
                     />
                     {owners.length > 1 && (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        onClick={() => removeOwner(index)}
-                        className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
-                      >
+                      <button type="button" onClick={() => removeOwner(idx)} className="text-slate-400 hover:text-red-500">
                         <Trash2 className="w-5 h-5" />
-                      </Button>
+                      </button>
                     )}
                   </div>
                 ))}
               </div>
-              <p className="text-sm text-slate-500 dark:text-slate-400 mt-2">
-                Add the public keys (hex format) of all owners
-              </p>
             </div>
           )}
 
-          {/* Error Message */}
           {error && (
-            <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl">
-              <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+            <div className="p-3 bg-red-50 text-red-600 text-sm rounded-lg border border-red-200 dark:bg-red-900/10 dark:border-red-900/20 dark:text-red-400">
+              {error}
             </div>
           )}
 
-          {/* Actions */}
-          <div className="flex gap-3 pt-4">
-            <Button
-              type="submit"
-              loading={loading}
-              className="flex-1"
-              icon={<Shield className="w-5 h-5" />}
-            >
-              {loading ? 'Creating...' : mode === 'invite' ? 'Create & Get Link' : 'Create Safe'}
-            </Button>
-            <Link href="/safes">
-              <Button type="button" variant="secondary">
-                Cancel
-              </Button>
-            </Link>
-          </div>
+          <Button type="submit" loading={loading} className="w-full justify-center">
+            {mode === 'invite' ? 'Create & Get Invite Link' : 'Create Safe'}
+          </Button>
+
         </form>
       </Card>
     </div>
