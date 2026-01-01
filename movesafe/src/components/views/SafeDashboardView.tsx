@@ -278,7 +278,7 @@ export function SafeDashboardView({ safeAddress, onBack }: SafeDashboardViewProp
             {/* RIGHT CONTENT */}
             <div className="flex-1 flex flex-col min-w-0 bg-transparent relative">
                 {/* Top Bar */}
-                <div className="h-20 min-h-[5rem] flex items-center justify-between px-8 border-b border-zinc-800/50 z-20 bg-black/50 backdrop-blur-sm pt-safe md:pt-0 sticky top-0">
+                <div className="h-auto md:h-20 min-h-[5rem] flex items-center justify-between px-6 md:px-8 border-b border-zinc-800/50 z-20 bg-black/50 backdrop-blur-sm pt-safe pt-4 pb-4 md:pt-0 md:pb-0 sticky top-0">
                     <div className="flex items-center gap-4">
                         {/* Mobile Hamburger */}
                         <button
@@ -289,10 +289,10 @@ export function SafeDashboardView({ safeAddress, onBack }: SafeDashboardViewProp
                         </button>
 
                         <div>
-                            <h1 className="text-sm font-medium text-zinc-500">Total Balance</h1>
-                            <p className="text-2xl font-bold tracking-tight">{balance.toLocaleString('en-US', { minimumFractionDigits: 4 })} <span className="text-base font-normal text-zinc-600">MOVE</span></p>
+                            <h1 className="text-xs md:text-sm font-medium text-zinc-500">Total Balance</h1>
+                            <p className="text-xl md:text-2xl font-bold tracking-tight">{balance.toLocaleString('en-US', { minimumFractionDigits: 4 })} <span className="text-sm md:text-base font-normal text-zinc-600">MOVE</span></p>
                             {movePrice && (
-                                <p className="text-sm text-zinc-500 mt-1">
+                                <p className="text-xs md:text-sm text-zinc-500 mt-1">
                                     ≈ ${(balance * movePrice).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD
                                     <span className="text-zinc-600 ml-1">(@ ${movePrice.toFixed(4)})</span>
                                 </p>
@@ -302,10 +302,11 @@ export function SafeDashboardView({ safeAddress, onBack }: SafeDashboardViewProp
 
                     <button
                         onClick={() => setIsTxModalOpen(true)}
-                        className="flex items-center gap-2 bg-white text-black px-5 py-2.5 rounded-full font-bold text-sm hover:bg-zinc-200 transition-all active:scale-95 shadow-lg shadow-white/5"
+                        className="flex items-center gap-2 bg-white text-black px-3 py-2 md:px-5 md:py-2.5 rounded-full font-bold text-xs md:text-sm hover:bg-zinc-200 transition-all active:scale-95 shadow-lg shadow-white/5"
                     >
-                        <Plus className="w-4 h-4" />
-                        New Transaction
+                        <Plus className="w-3 h-3 md:w-4 md:h-4" />
+                        <span className="hidden md:inline">New Transaction</span>
+                        <span className="md:hidden">New Transaction</span>
                     </button>
                 </div>
 
@@ -489,7 +490,14 @@ export function SafeDashboardView({ safeAddress, onBack }: SafeDashboardViewProp
                                                     {i + 1}
                                                 </div>
                                                 <div className="flex-1 min-w-0">
-                                                    <div className="font-mono text-sm text-zinc-300 truncate">{displayAddress}</div>
+                                                    <div className="font-mono text-sm text-zinc-300">
+                                                        <span className="md:hidden">
+                                                            {displayAddress.slice(0, 10)}...{displayAddress.slice(-8)}
+                                                        </span>
+                                                        <span className="hidden md:block truncate">
+                                                            {displayAddress}
+                                                        </span>
+                                                    </div>
                                                     <div className="text-xs text-zinc-600 mt-0.5">Owner</div>
                                                 </div>
                                                 <button
