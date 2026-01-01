@@ -147,7 +147,7 @@ export function NewTransactionModal({
               placeholder="What is this transaction for?"
               rows={3}
               maxLength={500}
-              className="w-full pl-10 pr-4 py-2.5 bg-zinc-900 border border-zinc-800 rounded-xl text-white placeholder:text-zinc-600 focus:outline-none focus:border-zinc-600 resize-none"
+              className="w-full pl-10 pr-4 py-2.5 bg-zinc-900 border border-zinc-800 rounded-xl text-white placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500/50 transition-all resize-none"
             />
           </div>
           <p className="text-xs text-zinc-600">{memo.length}/500 characters</p>

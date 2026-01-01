@@ -43,10 +43,10 @@ export function Modal({
             <div
                 className={`
           relative w-full ${sizes[size]}
-          bg-white dark:bg-slate-900
+          bg-zinc-950
           rounded-2xl shadow-2xl
           transform transition-all
-          border border-slate-200 dark:border-slate-800
+          border border-zinc-800
           animate-in fade-in zoom-in-95 duration-200
         `}
             >
@@ -55,12 +55,12 @@ export function Modal({
                     <div className="flex items-start justify-between p-6 pb-0">
                         <div>
                             {title && (
-                                <h2 className="text-xl font-semibold text-slate-900 dark:text-white">
+                                <h2 className="text-xl font-semibold text-zinc-100">
                                     {title}
                                 </h2>
                             )}
                             {description && (
-                                <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                                <p className="mt-1 text-sm text-zinc-400">
                                     {description}
                                 </p>
                             )}
@@ -68,7 +68,7 @@ export function Modal({
                         {showClose && (
                             <button
                                 onClick={onClose}
-                                className="p-2 -m-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+                                className="p-2 -m-2 text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800 rounded-lg transition-colors"
                             >
                                 <X className="w-5 h-5" />
                             </button>
@@ -92,7 +92,7 @@ interface ModalFooterProps {
 
 export function ModalFooter({ children }: ModalFooterProps) {
     return (
-        <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-200 dark:border-slate-800 mt-6 -mx-6 -mb-6 px-6 py-4 bg-slate-50 dark:bg-slate-800/50 rounded-b-2xl">
+        <div className="flex items-center justify-end gap-3 pt-4 border-t border-zinc-800 mt-6 -mx-6 -mb-6 px-6 py-4 bg-zinc-900/50 rounded-b-2xl">
             {children}
         </div>
     );

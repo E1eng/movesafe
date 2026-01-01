@@ -2,7 +2,7 @@
 
 import { useWallet } from '@aptos-labs/wallet-adapter-react';
 import { Modal, ModalFooter } from '@/components/ui/Modal';
-import { useToast } from '@/components/ui/ToastProvider';
+import { toast } from 'sonner';
 import { Wallet, ExternalLink, Loader2 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -24,33 +24,27 @@ export function WalletSelector({ isOpen, onClose }: WalletSelectorProps) {
   const { wallets, connect } = useWallet();
   const [isConnecting, setIsConnecting] = useState(false);
 
-  const { toast } = useToast();
+
 
   const handleConnect = async (wallet: AptosWallet) => {
     setIsConnecting(true);
     try {
       await connect(wallet.name);
-      toast({
-        title: "Wallet Connected",
+      toast.success('Wallet Connected', {
         description: `Connected to ${wallet.name}`,
-        variant: "success",
         duration: 3000
       });
       onClose();
     } catch (error: unknown) {
       const errorMessage = (error as Error)?.message || String(error);
       if (errorMessage.toLowerCase().includes('rejected')) {
-        toast({
-          title: "Connection Cancelled",
+        toast.info('Connection Cancelled', {
           description: "You cancelled the request.",
-          variant: "info",
           duration: 3000
         });
       } else {
-        toast({
-          title: "Connection Failed",
-          description: errorMessage,
-          variant: "error"
+        toast.error('Connection Failed', {
+          description: errorMessage
         });
         console.error('Failed to connect:', error);
       }
