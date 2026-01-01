@@ -329,7 +329,7 @@ export function SafeDashboardView({ safeAddress, onBack }: SafeDashboardViewProp
                 </div>
 
                 {/* Tab Content */}
-                <div className="flex-1 overflow-y-auto p-8 overscroll-contain pb-safe">
+                <div className="flex-1 overflow-y-auto p-4 md:p-8 overscroll-contain pb-safe">
                     <AnimatePresence mode="wait">
                         {activeTab === 'queue' && (
                             <motion.div
