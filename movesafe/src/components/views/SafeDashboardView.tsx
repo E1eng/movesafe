@@ -16,6 +16,7 @@ import { aptos } from '@/lib/movement';
 import { toast } from 'sonner';
 import { assembleMultiSigAuthenticator, SignatureData } from '@/lib/multisig';
 import { Ed25519PublicKey } from '@aptos-labs/ts-sdk';
+import { formatAmount, getTransferDetails } from '@/lib/format';
 
 // Extending Transaction to include signatures for the UI
 interface ExtendedTransaction extends Transaction {
@@ -415,11 +416,10 @@ export function SafeDashboardView({ safeAddress, onBack }: SafeDashboardViewProp
                                                 // Generate CSV
                                                 const headers = ['Date', 'Type', 'Amount (MOVE)', 'Recipient', 'Tx Hash', 'Memo'];
                                                 const rows = history.map(tx => {
-                                                    const args = tx.payload.functionArguments;
-                                                    const amount = args && args.length >= 2 ? (parseFloat(String(args[1])) / 100000000).toFixed(8) : '0';
-                                                    const recipient = args && args.length >= 1 ? String(args[0]) : 'Unknown';
+                                                    const { recipient, amount } = getTransferDetails(tx.payload);
+                                                    const formattedAmount = formatAmount(amount);
                                                     const date = tx.executed_at ? new Date(tx.executed_at).toISOString().split('T')[0] : 'N/A';
-                                                    return [date, 'Send', amount, recipient, tx.tx_hash || '', tx.memo || ''].join(',');
+                                                    return [date, 'Send', formattedAmount, recipient, tx.tx_hash || '', tx.memo || ''].join(',');
                                                 });
                                                 const csv = [headers.join(','), ...rows].join('\n');
                                                 const blob = new Blob([csv], { type: 'text/csv' });
@@ -449,21 +449,7 @@ export function SafeDashboardView({ safeAddress, onBack }: SafeDashboardViewProp
                                     </div>
                                 ) : (
                                     history.map(tx => {
-                                        const getTransferDetails = () => {
-                                            const args = tx.payload.functionArguments;
-                                            if (args && args.length >= 2) {
-                                                return {
-                                                    recipient: String(args[0]),
-                                                    amount: String(args[1])
-                                                };
-                                            }
-                                            return { recipient: 'Unknown', amount: '0' };
-                                        };
-                                        const { recipient, amount } = getTransferDetails();
-                                        const formatAmount = (octas: string) => {
-                                            const num = parseFloat(octas) / 100000000;
-                                            return num.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 8 });
-                                        };
+                                        const { recipient, amount } = getTransferDetails(tx.payload);
 
                                         return (
                                             <div key={tx.id} className="p-4 rounded-2xl bg-zinc-900/50 border border-zinc-800 flex items-center gap-4">

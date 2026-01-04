@@ -4,6 +4,7 @@ import { Clock, Check, Copy, ChevronDown, ChevronUp, Signature as SignatureIcon,
 import { Transaction, Signature } from '@/lib/supabase';
 import { useState } from 'react';
 import { useMovePrice } from '@/hooks/useMovePrice';
+import { formatAmount, getTransferDetails } from '@/lib/format';
 
 interface TransactionQueueItemProps {
   transaction: Transaction;
@@ -43,23 +44,7 @@ export function TransactionQueueItem({
     navigator.clipboard.writeText(text).catch(() => { });
   };
 
-  const getTransferDetails = () => {
-    const args = transaction.payload.functionArguments;
-    if (args && args.length >= 2) {
-      return {
-        recipient: String(args[0]),
-        amount: String(args[1])
-      };
-    }
-    return { recipient: 'Unknown', amount: '0' };
-  };
-
-  const { recipient, amount } = getTransferDetails();
-
-  const formatAmount = (octas: string) => {
-    const num = parseFloat(octas) / 100000000;
-    return num.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 8 });
-  };
+  const { recipient, amount } = getTransferDetails(transaction.payload);
 
   return (
     <div className="rounded-2xl bg-zinc-900 border border-zinc-800 overflow-hidden transition-all duration-300">
