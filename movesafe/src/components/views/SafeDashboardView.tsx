@@ -3,8 +3,8 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-    ArrowLeft, Copy, Plus, Menu, CheckCircle2,
-    Wallet, Users, History, Settings, Coins, LogOut, Loader2, X, Inbox, Clock, Download
+    Copy, Plus, Menu, CheckCircle2,
+    Wallet, Users, History, Coins, LogOut, Loader2, X, Inbox, Clock, Download
 } from 'lucide-react';
 import { supabase, Safe, Transaction } from '@/lib/supabase';
 import { TransactionQueueItem } from '@/components/features/transaction/TransactionQueueItem';
@@ -83,7 +83,8 @@ export function SafeDashboardView({ safeAddress, onBack }: SafeDashboardViewProp
                     setBalance(Number(val) / 100_000_000); // 8 decimals for MOVE
                 }
             } catch (err) {
-                console.log("Balance fetch failed (safe might be new)", err);
+                // Balance fetch failed, safe might be new
+
                 setBalance(0);
             }
 
@@ -146,7 +147,6 @@ export function SafeDashboardView({ safeAddress, onBack }: SafeDashboardViewProp
                 sigHex = Buffer.from(auth.bcs).toString('hex');
             } else {
                 // Last resort: stringify the whole thing
-                console.log('senderAuthenticator structure:', JSON.stringify(auth, null, 2));
                 throw new Error('Could not extract signature from wallet response');
             }
 

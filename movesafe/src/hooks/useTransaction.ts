@@ -83,8 +83,6 @@ export function useTransaction({ safeAddress, creatorAddress, onSuccess }: UseTr
       // 3. Determine Next Sequence Number
       const nextSequenceNumber = Math.max(onChainSeq, maxPendingSeq + 1);
 
-      console.log(`[Transaction] OnChain: ${onChainSeq}, DB Max: ${maxPendingSeq} -> Next: ${nextSequenceNumber}`);
-
       // 4. (Payload already constructed above)
 
       // 5. Build Preview Transaction for Gas Estimation
