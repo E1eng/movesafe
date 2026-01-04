@@ -1,6 +1,8 @@
 # MoveSafe 🛡️
 
 > **Secure, Native Multi-Signature Treasury Management for the Movement Network.**
+>
+> 🔴 **[LIVE DEMO](https://movesafe.eleng.xyz)**
 
 MoveSafe is a next-generation multisig wallet built exclusively for the **Movement Network**. Unlike traditional multisig solutions that rely on complex and potentially vulnerable smart contracts, MoveSafe leverages Aptos's native **MultiEd25519** authentication scheme. This means better security, lower gas fees, and clearer on-chain transparency.
 
@@ -14,6 +16,7 @@ MoveSafe is a next-generation multisig wallet built exclusively for the **Moveme
 ## ✨ Key Features
 
 - **Create Safes instantly**: define owners and threshold (K-of-N).
+- **Activation & Fee**: One-step Safe activation with automated creation fee (1 MOVE).
 - **Asset Dashboard**: View MOVE token balance and USD valuation in real-time.
 - **Transaction Queue**: Propose transactions, collect signatures asynchronously, and execute when ready.
 - **Contextual Memos**: Attach text messages to transactions for clear record-keeping.
@@ -47,6 +50,19 @@ For a detailed look at the off-chain coordination tables, please refer to the [D
 - **Database**: [Supabase](https://supabase.com/) (PostgreSQL) for off-chain coordination
 - **Network**: [Movement Network](https://movementlabs.xyz/) (Bardock Testnet)
 
+## 📖 How it Works
+
+1.  **Create a Safe**: Define owners and a threshold (e.g., 2-of-3).
+    *   *System automatically funds & activates the Safe account involved.*
+2.  **Propose a Transaction**: Any owner can create a proposal (e.g., "Send 10 MOVE to Alice").
+3.  **Collect Signatures**:
+    *   The proposal appears in the **Queue** for all owners.
+    *   Other owners connect their wallets and click "Sign".
+    *   Signatures are stored off-chain (gasless).
+4.  **Execute**: Once the threshold is reached (e.g., 2 signatures), **any** owner can click "Execute".
+    *   This submits the single transaction to the Movement Network.
+    *   Gas is paid only once.
+
 ## 🏁 Getting Started
 
 Follow these steps to run MoveSafe locally:
@@ -77,7 +93,6 @@ Follow these steps to run MoveSafe locally:
    # Treasury Config (For Safe Creation Fee)
    NEXT_PUBLIC_TREASURY_ADDRESS=0xYourTreasuryAddress
    ```
-   *Note: Ensure your Supabase database has the `safes`, `transactions`, and `signatures` tables set up.*
 
 4. **Run the Development Server**
    ```bash

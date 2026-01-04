@@ -92,19 +92,20 @@ export default function DraftsPage() {
           <Loader2 className="w-8 h-8 text-zinc-500 animate-spin" />
         </div>
       ) : drafts.length === 0 ? (
-        <div className="flex-1 flex flex-col items-center justify-center text-center">
-          <div className="w-16 h-16 rounded-3xl bg-zinc-900 border border-zinc-800 flex items-center justify-center mb-4">
-            <FileText className="w-8 h-8 text-zinc-600" />
+        <div className="flex-1 flex flex-col items-center justify-center text-center py-16">
+          <div className="w-20 h-20 rounded-full bg-gradient-to-br from-amber-500/20 to-orange-500/20 border border-amber-500/30 flex items-center justify-center mb-6 shadow-lg shadow-black/20">
+            <FileText className="w-10 h-10 text-amber-400" />
           </div>
           <h3 className="text-xl font-bold mb-2">No Pending Drafts</h3>
-          <p className="text-zinc-500 max-w-xs mb-6">
-            Create a new safe with "Invite" mode to generate a shareable invite link.
+          <p className="text-zinc-400 max-w-xs mb-6">
+            Create a new safe with "Invite" mode to generate a shareable invite link for co-signers to join.
           </p>
           <button
             onClick={() => router.push('/select')}
-            className="px-6 py-3 bg-white text-black font-bold rounded-xl hover:bg-zinc-200 transition-colors"
+            className="flex items-center gap-2 px-5 py-2.5 bg-white text-black font-medium rounded-full hover:bg-zinc-200 transition-colors"
           >
-            Go Back
+            <Plus className="w-4 h-4" />
+            Create Safe
           </button>
         </div>
       ) : (
