@@ -1,13 +1,9 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import {
-    Copy, Plus, Menu, CheckCircle2,
-    Wallet, Users, History, Coins, LogOut, Loader2, X, Inbox, Clock, Download, LucideIcon
-} from 'lucide-react';
-import { supabase, Safe, Transaction, Signature } from '@/lib/supabase';
-import { TransactionQueueItem } from '@/components/features/transaction/TransactionQueueItem';
+import { AnimatePresence, motion } from 'framer-motion';
+import { Loader2, History, CheckCircle2, Coins, Users, LogOut, X } from 'lucide-react';
+import { supabase, Safe } from '@/lib/supabase';
 import { NewTransactionModal } from '@/components/features/transaction/NewTransactionModal';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { useWallet } from '@aptos-labs/wallet-adapter-react';
@@ -15,20 +11,21 @@ import { useMovePrice } from '@/hooks/useMovePrice';
 import { aptos } from '@/lib/movement';
 import { toast } from 'sonner';
 import { assembleMultiSigAuthenticator, SignatureData } from '@/lib/multisig';
-import { Ed25519PublicKey } from '@aptos-labs/ts-sdk';
-import { formatAmount, getTransferDetails } from '@/lib/format';
+import { formatError } from '@/lib/errorMessages';
+import { ExtendedTransaction, Tab } from '@/types/dashboard';
 
-// Extending Transaction to include signatures for the UI
-interface ExtendedTransaction extends Transaction {
-    signatures: Signature[];
-}
+// Sub-components
+import { DashboardSidebar } from '@/components/features/dashboard/DashboardSidebar';
+import { DashboardHeader } from '@/components/features/dashboard/DashboardHeader';
+import { TransactionQueue } from '@/components/features/dashboard/TransactionQueue';
+import { TransactionHistory } from '@/components/features/dashboard/TransactionHistory';
+import { SafeAssets } from '@/components/features/dashboard/SafeAssets';
+import { SafeOwners } from '@/components/features/dashboard/SafeOwners';
 
 interface SafeDashboardViewProps {
     safeAddress: string;
     onBack: () => void;
 }
-
-type Tab = 'queue' | 'history' | 'assets' | 'signers' | 'settings';
 
 export function SafeDashboardView({ safeAddress, onBack }: SafeDashboardViewProps) {
     const { account, signTransaction } = useWallet();
@@ -75,7 +72,7 @@ export function SafeDashboardView({ safeAddress, onBack }: SafeDashboardViewProp
 
             setHistory(historyData as ExtendedTransaction[] || []);
 
-            // 3. Fetch Balance (MOVE)
+            // 4. Fetch Balance (MOVE)
             try {
                 const resources = await aptos.getAccountResources({ accountAddress: safeAddress });
                 const coinResource = resources.find((r) => r.type === "0x1::coin::CoinStore<0x1::aptos_coin::AptosCoin>");
@@ -85,8 +82,6 @@ export function SafeDashboardView({ safeAddress, onBack }: SafeDashboardViewProp
                     setBalance(Number(val) / 100_000_000); // 8 decimals for MOVE
                 }
             } catch {
-                // Balance fetch failed, safe might be new
-
                 setBalance(0);
             }
 
@@ -136,7 +131,7 @@ export function SafeDashboardView({ safeAddress, onBack }: SafeDashboardViewProp
 
             const senderAuthenticator = await signTransaction({ transactionOrPayload: buildTx });
 
-            // Extract signature from authenticator - handle different possible structures
+            // Extract signature
             let sigHex: string;
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const auth = senderAuthenticator as any;
@@ -146,10 +141,8 @@ export function SafeDashboardView({ safeAddress, onBack }: SafeDashboardViewProp
             } else if (auth?.signature) {
                 sigHex = auth.signature.toString();
             } else if (auth?.bcs) {
-                // If BCS serialized, convert to hex
                 sigHex = Buffer.from(auth.bcs).toString('hex');
             } else {
-                // Last resort: stringify the whole thing
                 throw new Error('Could not extract signature from wallet response');
             }
 
@@ -163,8 +156,7 @@ export function SafeDashboardView({ safeAddress, onBack }: SafeDashboardViewProp
             loadData();
         } catch (e: unknown) {
             console.error("Signing failed", e);
-            const msg = e instanceof Error ? e.message : String(e);
-            toast.error("Failed to sign: " + msg);
+            toast.error(`Failed to sign: ${formatError(e)}`);
         } finally {
             setSigningTxId(null);
         }
@@ -212,8 +204,7 @@ export function SafeDashboardView({ safeAddress, onBack }: SafeDashboardViewProp
             loadData();
         } catch (e: unknown) {
             console.error("Execution failed", e);
-            const msg = e instanceof Error ? e.message : String(e);
-            toast.error("Execution failed: " + msg);
+            toast.error(`Execution failed: ${formatError(e)}`);
         } finally {
             setExecutingTxId(null);
         }
@@ -230,9 +221,8 @@ export function SafeDashboardView({ safeAddress, onBack }: SafeDashboardViewProp
             if (error) throw error;
             toast.success("Transaction discarded");
             loadData();
-            loadData();
-        } catch {
-            toast.error("Failed to delete");
+        } catch (e) {
+            toast.error(`Failed to delete: ${formatError(e)}`);
         } finally {
             setConfirmDeleteId(null);
         }
@@ -244,330 +234,57 @@ export function SafeDashboardView({ safeAddress, onBack }: SafeDashboardViewProp
         </div>
     );
 
-    const NavItem = ({ id, label, icon: Icon, onSelect }: { id: Tab, label: string, icon: LucideIcon, onSelect?: () => void }) => (
-        <button
-            onClick={() => {
-                setActiveTab(id);
-                if (onSelect) onSelect();
-            }}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all cursor-pointer ${activeTab === id
-                ? 'bg-white text-black font-medium shadow-md shadow-white/5'
-                : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800'
-                }`}
-        >
-            <Icon className="w-5 h-5" />
-            {label}
-        </button>
-    );
-
     return (
         <div className="flex h-full bg-zinc-950 text-white">
-            {/* LEFT SIDEBAR - Desktop Only */}
-            <div className="hidden md:flex w-[260px] flex-col border-r border-zinc-800 p-6 bg-zinc-900">
-                {/* Safe Header */}
-                <div className="mb-8">
-                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center mb-4 shadow-lg shadow-blue-900/20">
-                        <Wallet className="w-6 h-6 text-white" />
-                    </div>
-                    <h2 className="font-bold text-xl mb-1">{safe.name}</h2>
-                    <button
-                        onClick={() => {
-                            navigator.clipboard.writeText(safeAddress);
-                            toast.success("Address copied");
-                        }}
-                        className="flex items-center gap-2 text-sm font-mono text-zinc-400 hover:text-zinc-300 transition-colors bg-zinc-700/50 px-2 py-1 rounded-md w-fit cursor-pointer"
-                    >
-                        {safeAddress.slice(0, 8)}...{safeAddress.slice(-6)}
-                        <Copy className="w-3 h-3" />
-                    </button>
-                </div>
+            <DashboardSidebar
+                safe={safe}
+                safeAddress={safeAddress}
+                activeTab={activeTab}
+                onSwitchTab={setActiveTab}
+                onBack={onBack}
+            />
 
-                {/* Navigation */}
-                <div className="flex-1 space-y-1">
-                    <NavItem id="queue" label="Queue" icon={History} />
-                    <NavItem id="history" label="History" icon={CheckCircle2} />
-                    <NavItem id="assets" label="Assets" icon={Coins} />
-                    <NavItem id="signers" label="Owners" icon={Users} />
-                    {/* <NavItem id="settings" label="Settings" icon={Settings} /> */}
-                </div>
-
-                {/* Bottom Actions */}
-                <div className="pt-6 border-t border-zinc-800">
-                    <button
-                        onClick={onBack}
-                        className="w-full flex items-center gap-3 px-4 py-3 text-zinc-400 hover:text-red-400 transition-colors text-sm font-medium cursor-pointer"
-                    >
-                        <LogOut className="w-4 h-4" />
-                        Exit Safe
-                    </button>
-                </div>
-            </div>
-
-            {/* RIGHT CONTENT */}
             <div className="flex-1 flex flex-col min-w-0 bg-transparent relative">
-                {/* Top Bar */}
-                <div className="h-auto md:h-20 min-h-[5rem] flex items-center justify-between px-6 md:px-8 border-b border-zinc-800 z-20 bg-zinc-950 pt-safe pt-4 pb-4 md:pt-0 md:pb-0 sticky top-0">
-                    <div className="flex items-center gap-4">
-                        {/* Mobile Hamburger */}
-                        <button
-                            onClick={() => setIsMobileMenuOpen(true)}
-                            className="md:hidden p-2 -ml-2 text-zinc-400 hover:text-white cursor-pointer"
-                        >
-                            <Menu className="w-6 h-6" />
-                        </button>
+                <DashboardHeader
+                    balance={balance}
+                    movePrice={movePrice}
+                    onNewTransaction={() => setIsTxModalOpen(true)}
+                    onMobileMenuOpen={() => setIsMobileMenuOpen(true)}
+                />
 
-                        <div className="min-w-0">
-                            <h1 className="text-xs font-medium text-zinc-400">Total Balance</h1>
-                            <div className="flex items-baseline gap-2 flex-wrap">
-                                <p className="text-xl md:text-2xl font-bold tracking-tight whitespace-nowrap">
-                                    {balance.toLocaleString('en-US', { minimumFractionDigits: 4 })} <span className="text-sm font-normal text-zinc-400">MOVE</span>
-                                </p>
-                                {movePrice && (
-                                    <span className="text-xs text-zinc-200 whitespace-nowrap">
-                                        ≈ ${(balance * movePrice).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                    </span>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-
-                    <button
-                        onClick={() => setIsTxModalOpen(true)}
-                        className="flex items-center gap-2 bg-white text-black px-3 py-2 md:px-5 md:py-2.5 rounded-full font-bold text-xs md:text-sm hover:bg-zinc-200 transition-all active:scale-95 shadow-lg shadow-white/5 cursor-pointer"
-                    >
-                        <Plus className="w-3 h-3 md:w-4 md:h-4" />
-                        <span className="hidden md:inline">New Transaction</span>
-                        <span className="md:hidden">New Transaction</span>
-                    </button>
-                </div>
-
-                {/* Tab Content */}
                 <div className="flex-1 overflow-y-auto p-4 md:p-8 overscroll-contain pb-safe">
                     <AnimatePresence mode="wait">
                         {activeTab === 'queue' && (
-                            <motion.div
-                                key="queue"
-                                initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
-                                className="space-y-4 max-w-3xl"
-                            >
-                                <div className="flex items-center justify-between mb-4">
-                                    <h3 className="text-lg font-semibold">Transaction Queue</h3>
-                                    <span className="text-xs font-mono px-2 py-1 bg-zinc-900 rounded text-zinc-400">Threshold: {safe.threshold} / {safe.owners.length}</span>
-                                </div>
-
-                                {transactions.length === 0 ? (
-                                    <div className="flex flex-col items-center justify-center py-16 border border-dashed border-zinc-700 rounded-3xl bg-gradient-to-b from-zinc-900/50 to-zinc-950/50">
-                                        <div className="w-20 h-20 rounded-full bg-gradient-to-br from-zinc-800 to-zinc-900 flex items-center justify-center mb-6 shadow-lg shadow-black/20">
-                                            <Inbox className="w-10 h-10 text-zinc-500" />
-                                        </div>
-                                        <h3 className="text-lg font-semibold text-white mb-2">All caught up!</h3>
-                                        <p className="text-zinc-400 text-sm text-center max-w-xs mb-6">No pending transactions in the queue. Create one to get started.</p>
-                                        <button
-                                            onClick={() => setIsTxModalOpen(true)}
-                                            className="flex items-center gap-2 px-4 py-2 bg-white text-black rounded-full text-sm font-medium hover:bg-zinc-200 transition-colors cursor-pointer"
-                                        >
-                                            <Plus className="w-4 h-4" />
-                                            New Transaction
-                                        </button>
-                                    </div>
-                                ) : (
-                                    transactions.map(tx => {
-                                        const userAddress = account?.address?.toString()?.toLowerCase();
-                                        const hasSigned = tx.signatures?.some((s) => s.signer_address.toLowerCase() === userAddress);
-
-                                        // Derive addresses from owner public keys for comparison
-                                        const isOwner = safe.owners.some(ownerPubKey => {
-                                            try {
-                                                const cleanPubKey = ownerPubKey.startsWith('0x') ? ownerPubKey.slice(2) : ownerPubKey;
-                                                const pubKey = new Ed25519PublicKey(cleanPubKey);
-                                                const derivedAddress = pubKey.authKey().derivedAddress().toString().toLowerCase();
-                                                return derivedAddress === userAddress;
-                                            } catch {
-                                                return false;
-                                            }
-                                        });
-
-                                        return (
-                                            <TransactionQueueItem
-                                                key={tx.id}
-                                                transaction={tx}
-                                                signatures={tx.signatures || []}
-                                                threshold={safe.threshold}
-                                                canSign={isOwner && !hasSigned}
-                                                canExecute={isOwner}
-                                                onSign={() => handleSign(tx)}
-                                                onExecute={() => handleExecute(tx)}
-                                                onDiscard={() => handleDiscard(tx)}
-                                                signingTxId={signingTxId}
-                                                executingTxId={executingTxId}
-                                            />
-                                        );
-                                    })
-                                )}
-                            </motion.div>
+                            <TransactionQueue
+                                transactions={transactions}
+                                safe={safe}
+                                userAddress={account?.address?.toString()?.toLowerCase()}
+                                signingTxId={signingTxId}
+                                executingTxId={executingTxId}
+                                onSign={handleSign}
+                                onExecute={handleExecute}
+                                onDiscard={handleDiscard}
+                                onNewTransaction={() => setIsTxModalOpen(true)}
+                            />
                         )}
 
                         {activeTab === 'history' && (
-                            <motion.div
-                                key="history"
-                                initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
-                                className="space-y-4 max-w-3xl"
-                            >
-                                <div className="flex items-center justify-between mb-4">
-                                    <h3 className="text-lg font-semibold">Transaction History</h3>
-                                    {history.length > 0 && (
-                                        <button
-                                            onClick={() => {
-                                                // Generate CSV
-                                                const headers = ['Date', 'Type', 'Amount (MOVE)', 'Recipient', 'Tx Hash', 'Memo'];
-                                                const rows = history.map(tx => {
-                                                    const { recipient, amount } = getTransferDetails(tx.payload);
-                                                    const formattedAmount = formatAmount(amount);
-                                                    const date = tx.executed_at ? new Date(tx.executed_at).toISOString().split('T')[0] : 'N/A';
-                                                    return [date, 'Send', formattedAmount, recipient, tx.tx_hash || '', tx.memo || ''].join(',');
-                                                });
-                                                const csv = [headers.join(','), ...rows].join('\n');
-                                                const blob = new Blob([csv], { type: 'text/csv' });
-                                                const url = URL.createObjectURL(blob);
-                                                const a = document.createElement('a');
-                                                a.href = url;
-                                                a.download = `movesafe-history-${safeAddress.slice(0, 8)}.csv`;
-                                                a.click();
-                                                URL.revokeObjectURL(url);
-                                                toast.success('History exported!');
-                                            }}
-                                            className="flex items-center gap-2 px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-lg text-xs font-medium transition-colors cursor-pointer"
-                                        >
-                                            <Download className="w-3.5 h-3.5" />
-                                            Export CSV
-                                        </button>
-                                    )}
-                                </div>
-
-                                {history.length === 0 ? (
-                                    <div className="flex flex-col items-center justify-center py-16 border border-dashed border-zinc-800 rounded-3xl bg-gradient-to-b from-zinc-900/50 to-zinc-950/50">
-                                        <div className="w-20 h-20 rounded-full bg-gradient-to-br from-zinc-800 to-zinc-900 flex items-center justify-center mb-6 shadow-lg shadow-black/20">
-                                            <Clock className="w-10 h-10 text-zinc-500" />
-                                        </div>
-                                        <h3 className="text-lg font-semibold text-white mb-2">No history yet</h3>
-                                        <p className="text-zinc-400 text-sm text-center max-w-xs">Executed transactions will appear here. Start by creating and executing your first transaction.</p>
-                                    </div>
-                                ) : (
-                                    history.map(tx => {
-                                        const { recipient, amount } = getTransferDetails(tx.payload);
-
-                                        return (
-                                            <div key={tx.id} className="p-4 rounded-2xl bg-zinc-900/50 border border-zinc-800 flex items-center gap-4">
-                                                <div className="w-10 h-10 rounded-xl bg-green-500/10 border border-green-500/20 flex items-center justify-center">
-                                                    <CheckCircle2 className="w-5 h-5 text-green-400" />
-                                                </div>
-                                                <div className="flex-1 min-w-0">
-                                                    <div className="font-medium text-white">
-                                                        Sent {formatAmount(amount)} MOVE
-                                                        {movePrice && (
-                                                            <span className="ml-2 text-xs font-normal text-zinc-400">
-                                                                (≈ ${(parseFloat(amount) / 100000000 * movePrice).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})
-                                                            </span>
-                                                        )}
-                                                    </div>
-                                                    <div className="text-xs text-zinc-400 flex items-center gap-2">
-                                                        To: <code className="font-mono bg-zinc-800 px-1 py-0.5 rounded">{recipient.slice(0, 8)}...{recipient.slice(-6)}</code>
-                                                    </div>
-                                                    {tx.memo && (
-                                                        <div className="text-xs text-zinc-400 mt-1 italic">&quot;{tx.memo}&quot;</div>
-                                                    )}
-                                                </div>
-                                                <div className="text-right">
-                                                    <div className="text-xs text-zinc-400">
-                                                        {tx.executed_at ? new Date(tx.executed_at).toLocaleDateString() : 'N/A'}
-                                                    </div>
-                                                    {tx.tx_hash && (
-                                                        <a
-                                                            href={`https://explorer.movementnetwork.xyz/txn/${tx.tx_hash}?network=bardock+testnet`}
-                                                            target="_blank"
-                                                            rel="noopener noreferrer"
-                                                            className="text-xs text-blue-400 hover:underline"
-                                                        >
-                                                            View →
-                                                        </a>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        );
-                                    })
-                                )}
-                            </motion.div>
+                            <TransactionHistory
+                                history={history}
+                                safeAddress={safeAddress}
+                                movePrice={movePrice}
+                            />
                         )}
 
                         {activeTab === 'assets' && (
-                            <motion.div
-                                key="assets"
-                                initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-                                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
-                            >
-                                <div className="p-6 bg-zinc-900/50 border border-zinc-800 rounded-3xl relative overflow-hidden group">
-                                    <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                                        <Coins className="w-24 h-24 text-white" />
-                                    </div>
-                                    <h4 className="text-zinc-400 font-medium text-sm mb-2">MOVE Token</h4>
-                                    <div className="text-3xl font-bold mb-1">{balance.toFixed(4)} <span className="text-lg text-zinc-400">MOVE</span></div>
-                                    {movePrice && (
-                                        <div className="text-sm text-zinc-400">≈ ${(balance * movePrice).toFixed(2)} USD</div>
-                                    )}
-                                </div>
-                                {/* Placeholder for other tokens */}
-                                <div className="p-6 border border-dashed border-zinc-800 rounded-3xl flex items-center justify-center text-zinc-400 text-sm h-full min-h-[160px]">
-                                    More assets coming soon...
-                                </div>
-                            </motion.div>
+                            <SafeAssets
+                                balance={balance}
+                                movePrice={movePrice}
+                            />
                         )}
 
                         {activeTab === 'signers' && (
-                            <motion.div
-                                key="signers"
-                                initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-                                className="space-y-4"
-                            >
-                                <h3 className="text-lg font-semibold mb-4">Safe Owners</h3>
-                                <div className="grid gap-3">
-                                    {safe.owners.map((ownerPubKey, i) => {
-                                        // Derive address from public key for display
-                                        let displayAddress = ownerPubKey;
-                                        try {
-                                            const cleanPubKey = ownerPubKey.startsWith('0x') ? ownerPubKey.slice(2) : ownerPubKey;
-                                            const pubKey = new Ed25519PublicKey(cleanPubKey);
-                                            displayAddress = pubKey.authKey().derivedAddress().toString();
-                                        } catch {
-                                            // If derivation fails, show the original value
-                                        }
-
-                                        return (
-                                            <div key={i} className="flex items-center gap-4 p-4 rounded-xl bg-zinc-900/50 border border-zinc-800/50">
-                                                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-zinc-800 to-zinc-700 flex items-center justify-center font-bold text-zinc-400">
-                                                    {i + 1}
-                                                </div>
-                                                <div className="flex-1 min-w-0">
-                                                    <div className="font-mono text-sm text-zinc-300">
-                                                        <span className="md:hidden">
-                                                            {displayAddress.slice(0, 10)}...{displayAddress.slice(-8)}
-                                                        </span>
-                                                        <span className="hidden md:block truncate">
-                                                            {displayAddress}
-                                                        </span>
-                                                    </div>
-                                                    <div className="text-xs text-zinc-500 mt-0.5">Owner</div>
-                                                </div>
-                                                <button
-                                                    onClick={() => { navigator.clipboard.writeText(displayAddress); toast.success("Copied"); }}
-                                                    className="p-2 hover:bg-zinc-800 rounded-lg text-zinc-400 cursor-pointer"
-                                                >
-                                                    <Copy className="w-4 h-4" />
-                                                </button>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                            </motion.div>
+                            <SafeOwners owners={safe.owners} />
                         )}
                     </AnimatePresence>
                 </div>
@@ -576,8 +293,6 @@ export function SafeDashboardView({ safeAddress, onBack }: SafeDashboardViewProp
                     isOpen={isTxModalOpen}
                     onClose={() => setIsTxModalOpen(false)}
                     safeAddress={safeAddress}
-                    safeThreshold={safe.threshold}
-                    safeOwners={safe.owners}
                     onTransactionCreated={() => {
                         setIsTxModalOpen(false);
                         loadData();
@@ -585,7 +300,6 @@ export function SafeDashboardView({ safeAddress, onBack }: SafeDashboardViewProp
                 />
             </div>
 
-            {/* Confirmation Dialog */}
             <ConfirmDialog
                 isOpen={!!confirmDeleteId}
                 onClose={() => setConfirmDeleteId(null)}
@@ -596,7 +310,7 @@ export function SafeDashboardView({ safeAddress, onBack }: SafeDashboardViewProp
                 variant="danger"
             />
 
-            {/* Mobile Navigation Drawer */}
+            {/* Mobile Drawer */}
             <AnimatePresence>
                 {isMobileMenuOpen && (
                     <>
@@ -617,10 +331,18 @@ export function SafeDashboardView({ safeAddress, onBack }: SafeDashboardViewProp
                                 </button>
                             </div>
                             <div className="flex-1 px-4 space-y-1 overflow-y-auto">
-                                <NavItem id="queue" label="Queue" icon={History} onSelect={() => setIsMobileMenuOpen(false)} />
-                                <NavItem id="history" label="History" icon={CheckCircle2} onSelect={() => setIsMobileMenuOpen(false)} />
-                                <NavItem id="assets" label="Assets" icon={Coins} onSelect={() => setIsMobileMenuOpen(false)} />
-                                <NavItem id="signers" label="Owners" icon={Users} onSelect={() => setIsMobileMenuOpen(false)} />
+                                <button onClick={() => { setActiveTab('queue'); setIsMobileMenuOpen(false); }} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-zinc-400 hover:bg-zinc-800">
+                                    <History className="w-5 h-5" /> Queue
+                                </button>
+                                <button onClick={() => { setActiveTab('history'); setIsMobileMenuOpen(false); }} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-zinc-400 hover:bg-zinc-800">
+                                    <CheckCircle2 className="w-5 h-5" /> History
+                                </button>
+                                <button onClick={() => { setActiveTab('assets'); setIsMobileMenuOpen(false); }} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-zinc-400 hover:bg-zinc-800">
+                                    <Coins className="w-5 h-5" /> Assets
+                                </button>
+                                <button onClick={() => { setActiveTab('signers'); setIsMobileMenuOpen(false); }} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-zinc-400 hover:bg-zinc-800">
+                                    <Users className="w-5 h-5" /> Owners
+                                </button>
                             </div>
                             <div className="p-6 border-t border-zinc-800">
                                 <button onClick={onBack} className="flex items-center gap-3 text-red-400 font-medium cursor-pointer">

@@ -13,8 +13,6 @@ interface NewTransactionModalProps {
   isOpen: boolean;
   onClose: () => void;
   safeAddress: string;
-  safeThreshold: number;
-  safeOwners: string[];
   onTransactionCreated: () => void;
 }
 
