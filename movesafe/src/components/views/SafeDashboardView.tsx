@@ -265,7 +265,7 @@ export function SafeDashboardView({ safeAddress, onBack }: SafeDashboardViewProp
                             navigator.clipboard.writeText(safeAddress);
                             toast.success("Address copied");
                         }}
-                        className="flex items-center gap-2 text-xs font-mono text-zinc-500 hover:text-zinc-300 transition-colors bg-zinc-900/50 px-2 py-1 rounded-md w-fit cursor-pointer"
+                        className="flex items-center gap-2 text-sm font-mono text-zinc-400 hover:text-zinc-300 transition-colors bg-zinc-900/50 px-2 py-1 rounded-md w-fit cursor-pointer"
                     >
                         {safeAddress.slice(0, 8)}...{safeAddress.slice(-6)}
                         <Copy className="w-3 h-3" />
@@ -282,10 +282,10 @@ export function SafeDashboardView({ safeAddress, onBack }: SafeDashboardViewProp
                 </div>
 
                 {/* Bottom Actions */}
-                <div className="pt-6 border-t border-zinc-900">
+                <div className="pt-6 border-t border-zinc-800">
                     <button
                         onClick={onBack}
-                        className="w-full flex items-center gap-3 px-4 py-3 text-zinc-500 hover:text-red-400 transition-colors text-sm font-medium cursor-pointer"
+                        className="w-full flex items-center gap-3 px-4 py-3 text-zinc-400 hover:text-red-400 transition-colors text-sm font-medium cursor-pointer"
                     >
                         <LogOut className="w-4 h-4" />
                         Exit Safe
@@ -296,7 +296,7 @@ export function SafeDashboardView({ safeAddress, onBack }: SafeDashboardViewProp
             {/* RIGHT CONTENT */}
             <div className="flex-1 flex flex-col min-w-0 bg-transparent relative">
                 {/* Top Bar */}
-                <div className="h-auto md:h-20 min-h-[5rem] flex items-center justify-between px-6 md:px-8 border-b border-zinc-700/50 z-20 bg-black/50 backdrop-blur-sm pt-safe pt-4 pb-4 md:pt-0 md:pb-0 sticky top-0">
+                <div className="h-auto md:h-20 min-h-[5rem] flex items-center justify-between px-6 md:px-8 border-b border-zinc-800 z-20 bg-zinc-950 pt-safe pt-4 pb-4 md:pt-0 md:pb-0 sticky top-0">
                     <div className="flex items-center gap-4">
                         {/* Mobile Hamburger */}
                         <button
@@ -307,10 +307,10 @@ export function SafeDashboardView({ safeAddress, onBack }: SafeDashboardViewProp
                         </button>
 
                         <div className="min-w-0">
-                            <h1 className="text-xs font-medium text-zinc-500">Total Balance</h1>
+                            <h1 className="text-xs font-medium text-zinc-400">Total Balance</h1>
                             <div className="flex items-baseline gap-2 flex-wrap">
                                 <p className="text-xl md:text-2xl font-bold tracking-tight whitespace-nowrap">
-                                    {balance.toLocaleString('en-US', { minimumFractionDigits: 4 })} <span className="text-sm font-normal text-zinc-500">MOVE</span>
+                                    {balance.toLocaleString('en-US', { minimumFractionDigits: 4 })} <span className="text-sm font-normal text-zinc-400">MOVE</span>
                                 </p>
                                 {movePrice && (
                                     <span className="text-xs text-zinc-200 whitespace-nowrap">
@@ -399,7 +399,7 @@ export function SafeDashboardView({ safeAddress, onBack }: SafeDashboardViewProp
                                 {history.length === 0 ? (
                                     <div className="flex flex-col items-center justify-center py-20 border border-dashed border-zinc-800 rounded-3xl bg-zinc-900/20">
                                         <CheckCircle2 className="w-12 h-12 text-zinc-700 mb-3" />
-                                        <p className="text-zinc-600 text-sm">No executed transactions yet</p>
+                                        <p className="text-zinc-400 text-sm">No executed transactions yet</p>
                                     </div>
                                 ) : (
                                     history.map(tx => {
@@ -428,12 +428,12 @@ export function SafeDashboardView({ safeAddress, onBack }: SafeDashboardViewProp
                                                     <div className="font-medium text-white">
                                                         Sent {formatAmount(amount)} MOVE
                                                         {movePrice && (
-                                                            <span className="ml-2 text-xs font-normal text-zinc-500">
+                                                            <span className="ml-2 text-xs font-normal text-zinc-400">
                                                                 (≈ ${(parseFloat(amount) / 100000000 * movePrice).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})
                                                             </span>
                                                         )}
                                                     </div>
-                                                    <div className="text-xs text-zinc-500 flex items-center gap-2">
+                                                    <div className="text-xs text-zinc-400 flex items-center gap-2">
                                                         To: <code className="font-mono bg-zinc-800 px-1 py-0.5 rounded">{recipient.slice(0, 8)}...{recipient.slice(-6)}</code>
                                                     </div>
                                                     {tx.memo && (
@@ -441,7 +441,7 @@ export function SafeDashboardView({ safeAddress, onBack }: SafeDashboardViewProp
                                                     )}
                                                 </div>
                                                 <div className="text-right">
-                                                    <div className="text-xs text-zinc-500">
+                                                    <div className="text-xs text-zinc-400">
                                                         {tx.executed_at ? new Date(tx.executed_at).toLocaleDateString() : 'N/A'}
                                                     </div>
                                                     {tx.tx_hash && (
@@ -472,15 +472,15 @@ export function SafeDashboardView({ safeAddress, onBack }: SafeDashboardViewProp
                                     <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
                                         <Coins className="w-24 h-24 text-white" />
                                     </div>
-                                    <h4 className="text-zinc-500 font-medium text-sm mb-2">MOVE Token</h4>
-                                    <div className="text-3xl font-bold mb-1">{balance.toFixed(4)} <span className="text-lg text-zinc-500">MOVE</span></div>
+                                    <h4 className="text-zinc-400 font-medium text-sm mb-2">MOVE Token</h4>
+                                    <div className="text-3xl font-bold mb-1">{balance.toFixed(4)} <span className="text-lg text-zinc-400">MOVE</span></div>
                                     {movePrice && (
-                                        <div className="text-sm text-zinc-500">≈ ${(balance * movePrice).toFixed(2)} USD</div>
+                                        <div className="text-sm text-zinc-400">≈ ${(balance * movePrice).toFixed(2)} USD</div>
                                     )}
-                                    <div className="text-sm text-zinc-600">Movement Network</div>
+                                    <div className="text-sm text-zinc-500">Movement Network</div>
                                 </div>
                                 {/* Placeholder for other tokens */}
-                                <div className="p-6 border border-dashed border-zinc-800 rounded-3xl flex items-center justify-center text-zinc-600 text-sm h-full min-h-[160px]">
+                                <div className="p-6 border border-dashed border-zinc-800 rounded-3xl flex items-center justify-center text-zinc-400 text-sm h-full min-h-[160px]">
                                     More assets coming soon...
                                 </div>
                             </motion.div>
@@ -519,11 +519,11 @@ export function SafeDashboardView({ safeAddress, onBack }: SafeDashboardViewProp
                                                             {displayAddress}
                                                         </span>
                                                     </div>
-                                                    <div className="text-xs text-zinc-600 mt-0.5">Owner</div>
+                                                    <div className="text-xs text-zinc-500 mt-0.5">Owner</div>
                                                 </div>
                                                 <button
                                                     onClick={() => { navigator.clipboard.writeText(displayAddress); toast.success("Copied"); }}
-                                                    className="p-2 hover:bg-zinc-800 rounded-lg text-zinc-500 cursor-pointer"
+                                                    className="p-2 hover:bg-zinc-800 rounded-lg text-zinc-400 cursor-pointer"
                                                 >
                                                     <Copy className="w-4 h-4" />
                                                 </button>
