@@ -153,7 +153,7 @@ export function SafeSelectionView({ onSelectSafe }: SafeSelectionViewProps) {
 
                         <button
                             onClick={() => setIsCreateOpen(true)}
-                            className="p-4 md:p-5 rounded-3xl bg-white text-black flex flex-row md:flex-col items-center md:items-start gap-3 shadow-lg shadow-white/5 hover:bg-zinc-200 hover:-translate-y-1 transition-all duration-300 cursor-pointer active:scale-95"
+                            className="p-4 md:p-5 rounded-3xl bg-white text-black flex flex-row md:flex-col items-center md:items-start gap-3 shadow-lg shadow-white/5 hover:bg-zinc-200 transition-all duration-300 cursor-pointer active:scale-95"
                         >
                             <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-black/10 flex items-center justify-center shrink-0">
                                 <Plus className="w-4 h-4 md:w-5 md:h-5 text-black" />
@@ -166,7 +166,7 @@ export function SafeSelectionView({ onSelectSafe }: SafeSelectionViewProps) {
 
                         <button
                             onClick={() => router.push('/drafts')}
-                            className="p-4 md:p-5 rounded-3xl bg-zinc-900 border border-zinc-800 flex flex-row md:flex-col items-center md:items-start gap-3 hover:bg-zinc-800 hover:border-zinc-700 hover:-translate-y-1 transition-all duration-300 cursor-pointer active:scale-95"
+                            className="p-4 md:p-5 rounded-3xl bg-zinc-900 border border-zinc-800 flex flex-row md:flex-col items-center md:items-start gap-3 hover:bg-zinc-800 hover:border-zinc-700 transition-all duration-300 cursor-pointer active:scale-95"
                         >
                             <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-zinc-800 flex items-center justify-center border border-zinc-700 shrink-0">
                                 <FileClock className="w-4 h-4 md:w-5 md:h-5 text-zinc-400 group-hover:text-white transition-colors" />

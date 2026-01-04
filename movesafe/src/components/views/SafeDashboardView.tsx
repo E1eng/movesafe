@@ -277,7 +277,7 @@ export function SafeDashboardView({ safeAddress, onBack }: SafeDashboardViewProp
                     <NavItem id="queue" label="Queue" icon={History} />
                     <NavItem id="history" label="History" icon={CheckCircle2} />
                     <NavItem id="assets" label="Assets" icon={Coins} />
-                    <NavItem id="signers" label="Signers" icon={Users} />
+                    <NavItem id="signers" label="Owners" icon={Users} />
                     {/* <NavItem id="settings" label="Settings" icon={Settings} /> */}
                 </div>
 
@@ -583,7 +583,7 @@ export function SafeDashboardView({ safeAddress, onBack }: SafeDashboardViewProp
                                 <NavItem id="queue" label="Queue" icon={History} onSelect={() => setIsMobileMenuOpen(false)} />
                                 <NavItem id="history" label="History" icon={CheckCircle2} onSelect={() => setIsMobileMenuOpen(false)} />
                                 <NavItem id="assets" label="Assets" icon={Coins} onSelect={() => setIsMobileMenuOpen(false)} />
-                                <NavItem id="signers" label="Signers" icon={Users} onSelect={() => setIsMobileMenuOpen(false)} />
+                                <NavItem id="signers" label="Owners" icon={Users} onSelect={() => setIsMobileMenuOpen(false)} />
                             </div>
                             <div className="p-6 border-t border-zinc-800">
                                 <button onClick={onBack} className="flex items-center gap-3 text-red-400 font-medium cursor-pointer">
