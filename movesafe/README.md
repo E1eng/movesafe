@@ -67,7 +67,7 @@ sequenceDiagram
     participant MoveSafe UI
     participant Supabase (DB)
     participant Owner B (Signer)
-    participant Aptos Blockchain
+    participant Movement Blockchain
 
     Note over Owner A (Proposer): Wants to send 10 MOVE
     Owner A (Proposer)->>MoveSafe UI: Creates "Send 10 MOVE" Proposal
@@ -86,8 +86,8 @@ sequenceDiagram
     Note over MoveSafe UI: Threshold Met (2/2)!
     Owner B (Signer)->>MoveSafe UI: Clicks "Execute"
     MoveSafe UI->>Supabase (DB): SELECT ALL signatures
-    MoveSafe UI->>Aptos Blockchain: Submit Transaction + 2 Signatures (MultiEd25519)
-    Aptos Blockchain-->>MoveSafe UI: Success (Hash)
+    MoveSafe UI->>Movement Blockchain: Submit Transaction + 2 Signatures (MultiEd25519)
+    Movement Blockchain-->>MoveSafe UI: Success (Hash)
     MoveSafe UI->>Supabase (DB): UPDATE status = EXECUTED
 ```
 

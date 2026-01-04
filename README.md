@@ -4,7 +4,7 @@
 >
 > 🔴 **[LIVE DEMO](https://movesafe.eleng.xyz)**
 
-MoveSafe is a next-generation multisig wallet built exclusively for the **Movement Network**. Unlike traditional multisig solutions that rely on complex and potentially vulnerable smart contracts, MoveSafe leverages Aptos's native **MultiEd25519** authentication scheme. This means better security, lower gas fees, and clearer on-chain transparency.
+MoveSafe is a next-generation multisig wallet built exclusively for the **Movement Network**. Unlike traditional multisig solutions that rely on complex and potentially vulnerable smart contracts, MoveSafe leverages movements native **MultiEd25519** authentication scheme. This means better security, lower gas fees, and clearer on-chain transparency.
 
 ## 🚀 Why MoveSafe?
 
