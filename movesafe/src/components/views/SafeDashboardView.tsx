@@ -242,7 +242,7 @@ export function SafeDashboardView({ safeAddress, onBack }: SafeDashboardViewProp
             }}
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all cursor-pointer ${activeTab === id
                 ? 'bg-white text-black font-medium shadow-md shadow-white/5'
-                : 'text-zinc-500 hover:text-zinc-300 hover:bg-zinc-900'
+                : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800'
                 }`}
         >
             <Icon className="w-5 h-5" />
