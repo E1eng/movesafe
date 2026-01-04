@@ -3,7 +3,7 @@ export const formatAmount = (octas: string | number | bigint) => {
     return num.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 8 });
 };
 
-export const getTransferDetails = (payload: any) => {
+export const getTransferDetails = (payload: { functionArguments: (string | number | boolean | Uint8Array)[] }) => {
     const args = payload.functionArguments;
     if (args && args.length >= 2) {
         return {

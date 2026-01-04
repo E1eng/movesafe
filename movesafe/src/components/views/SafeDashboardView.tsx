@@ -6,7 +6,7 @@ import {
     Copy, Plus, Menu, CheckCircle2,
     Wallet, Users, History, Coins, LogOut, Loader2, X, Inbox, Clock, Download
 } from 'lucide-react';
-import { supabase, Safe, Transaction } from '@/lib/supabase';
+import { supabase, Safe, Transaction, Signature } from '@/lib/supabase';
 import { TransactionQueueItem } from '@/components/features/transaction/TransactionQueueItem';
 import { NewTransactionModal } from '@/components/features/transaction/NewTransactionModal';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
@@ -20,7 +20,7 @@ import { formatAmount, getTransferDetails } from '@/lib/format';
 
 // Extending Transaction to include signatures for the UI
 interface ExtendedTransaction extends Transaction {
-    signatures: any[];
+    signatures: Signature[];
 }
 
 interface SafeDashboardViewProps {
@@ -171,7 +171,7 @@ export function SafeDashboardView({ safeAddress, onBack }: SafeDashboardViewProp
         if (!account || !safe) return;
         setExecutingTxId(tx.id);
         try {
-            const sigs: SignatureData[] = tx.signatures.map((s: any) => ({
+            const sigs: SignatureData[] = tx.signatures.map((s) => ({
                 signer: s.signer_address,
                 hex: s.signature_hex
             }));
@@ -368,7 +368,7 @@ export function SafeDashboardView({ safeAddress, onBack }: SafeDashboardViewProp
                                 ) : (
                                     transactions.map(tx => {
                                         const userAddress = account?.address?.toString()?.toLowerCase();
-                                        const hasSigned = tx.signatures?.some((s: any) => s.signer_address.toLowerCase() === userAddress);
+                                        const hasSigned = tx.signatures?.some((s) => s.signer_address.toLowerCase() === userAddress);
 
                                         // Derive addresses from owner public keys for comparison
                                         const isOwner = safe.owners.some(ownerPubKey => {
