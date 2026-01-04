@@ -78,7 +78,7 @@ export function SafeSelectionView({ onSelectSafe }: SafeSelectionViewProps) {
             {/* Header */}
             <div className="relative z-10 mb-8 flex items-start justify-between">
                 <div>
-                    <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-zinc-500">
+                    <h1 className="text-3xl font-bold text-white tracking-tight">
                         Welcome Back
                     </h1>
                     <p className="text-zinc-400 mt-2">Select a treasury to manage</p>
@@ -124,17 +124,14 @@ export function SafeSelectionView({ onSelectSafe }: SafeSelectionViewProps) {
                                                 <Wallet className="w-6 h-6 text-zinc-400 group-hover:text-blue-400 transition-colors" />
                                             </div>
                                             <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-                                                <ArrowRight className="w-5 h-5 text-zinc-500 group-hover:text-white" />
+                                                <ArrowRight className="w-5 h-5 text-zinc-400 group-hover:text-white" />
                                             </div>
                                         </div>
 
                                         <div>
                                             <h3 className="font-bold text-lg text-white mb-1 truncate">{safe.name}</h3>
                                             <div className="flex items-center gap-2">
-                                                <span className="px-2 py-0.5 rounded-md bg-zinc-800 text-[10px] font-mono text-zinc-400 border border-zinc-700">
-                                                    {safe.threshold}/{safe.owners.length} SIGS
-                                                </span>
-                                                <span className="text-xs text-zinc-500 font-mono truncate max-w-[80px]">
+                                                <span className="text-xs text-zinc-400 font-mono truncate max-w-[80px]">
                                                     {safe.address.slice(0, 6)}...
                                                 </span>
                                             </div>
@@ -145,10 +142,10 @@ export function SafeSelectionView({ onSelectSafe }: SafeSelectionViewProps) {
                         ) : (
                             <div className="h-full flex flex-col items-center justify-center text-center p-8 bg-zinc-900/30 rounded-3xl border border-dashed border-zinc-800">
                                 <div className="w-16 h-16 rounded-3xl bg-zinc-900 flex items-center justify-center mb-4">
-                                    <Shield className="w-8 h-8 text-zinc-600" />
+                                    <Shield className="w-8 h-8 text-zinc-500" />
                                 </div>
                                 <h3 className="text-xl font-bold text-white mb-2">No Safes Found</h3>
-                                <p className="text-zinc-500 max-w-xs mx-auto">
+                                <p className="text-zinc-400 max-w-xs mx-auto">
                                     You aren't associated with any multi-signature safes yet.
                                 </p>
                             </div>
@@ -157,7 +154,7 @@ export function SafeSelectionView({ onSelectSafe }: SafeSelectionViewProps) {
 
                     {/* Right Sidebar: Actions */}
                     <div className="w-full md:w-64 grid grid-cols-2 md:flex md:flex-col gap-3 md:gap-4 order-1 md:order-2 shrink-0">
-                        <div className="col-span-2 text-xs font-bold text-zinc-500 uppercase tracking-widest px-1">Actions</div>
+                        <div className="col-span-2 text-xs font-bold text-zinc-400 uppercase tracking-widest px-1">Actions</div>
 
                         <motion.button
                             whileHover={{ scale: 1.02 }}
@@ -170,7 +167,7 @@ export function SafeSelectionView({ onSelectSafe }: SafeSelectionViewProps) {
                             </div>
                             <div className="text-left min-w-0">
                                 <div className="font-bold text-sm md:text-lg truncate">Create New</div>
-                                <div className="text-[10px] md:text-xs text-zinc-500 font-medium truncate">Deploy a safe</div>
+                                <div className="text-[10px] md:text-xs text-zinc-400 font-medium truncate">Deploy a safe</div>
                             </div>
                         </motion.button>
 
@@ -185,7 +182,7 @@ export function SafeSelectionView({ onSelectSafe }: SafeSelectionViewProps) {
                             </div>
                             <div className="text-left min-w-0">
                                 <div className="font-bold text-white text-sm md:text-lg truncate">Drafts</div>
-                                <div className="text-[10px] md:text-xs text-zinc-500 font-medium truncate">View pending</div>
+                                <div className="text-[10px] md:text-xs text-zinc-400 font-medium truncate">View pending</div>
                             </div>
                         </motion.button>
                     </div>
