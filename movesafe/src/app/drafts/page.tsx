@@ -74,7 +74,7 @@ export default function DraftsPage() {
       <div className="relative z-10 mb-8">
         <button
           onClick={() => router.push('/select')}
-          className="flex items-center gap-2 text-zinc-500 hover:text-white transition-colors mb-6 group"
+          className="flex items-center gap-2 text-zinc-500 hover:text-white transition-colors mb-6 group cursor-pointer"
         >
           <div className="w-8 h-8 rounded-full bg-zinc-900 flex items-center justify-center group-hover:bg-zinc-800">
             <ArrowLeft className="w-4 h-4" />
@@ -93,8 +93,8 @@ export default function DraftsPage() {
         </div>
       ) : drafts.length === 0 ? (
         <div className="flex-1 flex flex-col items-center justify-center text-center py-16">
-          <div className="w-20 h-20 rounded-full bg-gradient-to-br from-amber-500/20 to-orange-500/20 border border-amber-500/30 flex items-center justify-center mb-6 shadow-lg shadow-black/20">
-            <FileText className="w-10 h-10 text-amber-400" />
+          <div className="w-20 h-20 rounded-full bg-gradient-to-br from-zinc-800 to-zinc-900 flex items-center justify-center mb-6 shadow-lg shadow-black/20">
+            <FileText className="w-10 h-10 text-zinc-400" />
           </div>
           <h3 className="text-xl font-bold mb-2">No Pending Drafts</h3>
           <p className="text-zinc-400 max-w-xs mb-6">
@@ -102,7 +102,7 @@ export default function DraftsPage() {
           </p>
           <button
             onClick={() => router.push('/select')}
-            className="flex items-center gap-2 px-5 py-2.5 bg-white text-black font-medium rounded-full hover:bg-zinc-200 transition-colors"
+            className="flex items-center gap-2 px-5 py-2.5 bg-white text-black font-medium rounded-full hover:bg-zinc-200 transition-colors cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             Create Safe
@@ -113,30 +113,30 @@ export default function DraftsPage() {
           variants={container}
           initial="hidden"
           animate="show"
-          className="grid grid-cols-1 md:grid-cols-2 gap-4 overflow-y-auto"
+          className="grid grid-cols-1 md:grid-cols-2 gap-4 overflow-y-auto p-2"
         >
           {drafts.map((draft) => (
             <motion.button
               key={draft.id}
               variants={item}
-              whileHover={{ scale: 1.02, y: -2 }}
-              whileTap={{ scale: 0.98 }}
               onClick={() => router.push(`/draft/${draft.id}`)}
-              className="group p-5 rounded-3xl bg-zinc-900/50 border border-zinc-800 hover:bg-zinc-900 hover:border-zinc-700 transition-all text-left flex flex-col gap-4"
+              className="group relative p-5 rounded-3xl bg-zinc-900 border border-zinc-800 hover:bg-zinc-800 hover:border-zinc-700 hover:-translate-y-1 transition-all duration-300 text-left flex flex-col gap-4 cursor-pointer shadow-lg shadow-black/5"
             >
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-500/20 to-orange-500/20 border border-amber-500/30 flex items-center justify-center">
-                    <FileText className="w-6 h-6 text-amber-400" />
+                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-zinc-800 to-zinc-900 border border-zinc-700/50 flex items-center justify-center group-hover:from-blue-500/20 group-hover:to-indigo-500/20 group-hover:border-blue-500/30 transition-all duration-300 shadow-lg shadow-black/20">
+                    <FileText className="w-6 h-6 text-zinc-400 group-hover:text-blue-400 transition-colors duration-300" />
                   </div>
                   <div>
-                    <h3 className="font-bold text-lg text-white">{draft.name || 'Unnamed Draft'}</h3>
-                    <span className="text-xs font-medium px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                    <h3 className="font-bold text-lg text-white mb-1">{draft.name || 'Unnamed Draft'}</h3>
+                    <span className="text-xs font-medium px-2 py-0.5 rounded-md bg-blue-500/10 text-blue-400 border border-blue-500/20">
                       DRAFT
                     </span>
                   </div>
                 </div>
-                <ChevronRight className="w-5 h-5 text-zinc-500 group-hover:text-white group-hover:translate-x-1 transition-all" />
+                <div className="opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-x-[-10px] group-hover:translate-x-0">
+                  <ChevronRight className="w-5 h-5 text-zinc-400 group-hover:text-white" />
+                </div>
               </div>
 
               <div className="flex items-center gap-3">
@@ -146,7 +146,7 @@ export default function DraftsPage() {
                     {draft.owners?.length || 0}/{draft.owner_limit} joined
                   </span>
                 </div>
-                <div className="text-xs text-zinc-500">
+                <div className="text-xs text-zinc-400">
                   {draft.threshold} sigs required
                 </div>
               </div>
@@ -154,7 +154,7 @@ export default function DraftsPage() {
               {/* Progress Bar */}
               <div className="h-1.5 bg-zinc-800 rounded-full overflow-hidden">
                 <div
-                  className="h-full bg-gradient-to-r from-amber-500 to-orange-500 rounded-full transition-all"
+                  className="h-full bg-gradient-to-r from-blue-500 to-blue-400 rounded-full transition-all"
                   style={{ width: `${((draft.owners?.length || 0) / draft.owner_limit) * 100}%` }}
                 />
               </div>

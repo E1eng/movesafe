@@ -174,7 +174,7 @@ export default function DraftSafePage() {
         <p className="text-zinc-500 mb-6">{error || 'This draft may have been deleted.'}</p>
         <button
           onClick={() => router.push('/select')}
-          className="px-6 py-3 bg-white text-black font-bold rounded-xl hover:bg-zinc-200 transition-colors"
+          className="px-6 py-3 bg-white text-black font-bold rounded-xl hover:bg-zinc-200 transition-colors cursor-pointer"
         >
           Back to Safes
         </button>
@@ -185,13 +185,13 @@ export default function DraftSafePage() {
   return (
     <div className="h-full flex flex-col p-8 bg-black text-white relative overflow-hidden">
       {/* Background Decor */}
-      <div className="absolute top-[-20%] left-[-20%] w-[500px] h-[500px] bg-amber-900/10 rounded-full blur-[100px] pointer-events-none" />
+      <div className="absolute top-[-20%] left-[-20%] w-[500px] h-[500px] bg-blue-900/10 rounded-full blur-[100px] pointer-events-none" />
 
       {/* Header */}
       <div className="relative z-10 mb-8">
         <button
           onClick={() => router.push('/drafts')}
-          className="flex items-center gap-2 text-zinc-500 hover:text-white transition-colors mb-6 group"
+          className="flex items-center gap-2 text-zinc-500 hover:text-white transition-colors mb-6 group cursor-pointer"
         >
           <div className="w-8 h-8 rounded-full bg-zinc-900 flex items-center justify-center group-hover:bg-zinc-800">
             <ArrowLeft className="w-4 h-4" />
@@ -200,12 +200,12 @@ export default function DraftSafePage() {
         </button>
 
         <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-500/20 to-orange-500/20 border border-amber-500/30 flex items-center justify-center">
-            <Shield className="w-7 h-7 text-amber-400" />
+          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-zinc-800 to-zinc-900 border border-zinc-700/50 flex items-center justify-center shadow-lg shadow-black/20">
+            <Shield className="w-7 h-7 text-zinc-400" />
           </div>
           <div>
             <h1 className="text-2xl font-bold">{draft.name}</h1>
-            <span className="text-xs font-medium px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-400 border border-amber-500/20">
+            <span className="text-xs font-medium px-2 py-0.5 rounded-md bg-blue-500/10 text-blue-400 border border-blue-500/20">
               {draft.status}
             </span>
           </div>
@@ -243,7 +243,7 @@ export default function DraftSafePage() {
           />
           <button
             onClick={handleCopy}
-            className="px-4 py-3 bg-zinc-800 hover:bg-zinc-700 rounded-xl transition-colors"
+            className="px-4 py-3 bg-zinc-800 hover:bg-zinc-700 rounded-xl transition-colors cursor-pointer"
           >
             <Copy className="w-5 h-5" />
           </button>
@@ -275,7 +275,7 @@ export default function DraftSafePage() {
           {!isOwner && (
             <button
               onClick={() => router.push(`/join/${draft.id}?t=${draft.join_token}`)}
-              className="w-full py-4 bg-zinc-900 border border-zinc-700 hover:bg-zinc-800 rounded-2xl font-bold transition-colors"
+              className="w-full py-4 bg-zinc-900 border border-zinc-700 hover:bg-zinc-800 rounded-2xl font-bold transition-colors cursor-pointer"
             >
               Join This Draft
             </button>
@@ -284,7 +284,7 @@ export default function DraftSafePage() {
           <button
             onClick={handleFinalize}
             disabled={!canFinalize || finalizing}
-            className="w-full py-4 bg-white text-black font-bold rounded-2xl hover:bg-zinc-200 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+            className="w-full py-4 bg-white text-black font-bold rounded-2xl hover:bg-zinc-200 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
           >
             {finalizing && <Loader2 className="w-4 h-4 animate-spin" />}
             <Shield className="w-5 h-5" />
@@ -297,7 +297,7 @@ export default function DraftSafePage() {
         <div className="mt-auto">
           <button
             onClick={() => router.push(`/dashboard?safe=${draft.finalized_safe_address}`)}
-            className="w-full py-4 bg-white text-black font-bold rounded-2xl hover:bg-zinc-200 transition-colors"
+            className="w-full py-4 bg-white text-black font-bold rounded-2xl hover:bg-zinc-200 transition-colors cursor-pointer"
           >
             Open Safe Dashboard
           </button>
