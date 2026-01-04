@@ -62,7 +62,7 @@ export function TransactionQueueItem({
   };
 
   return (
-    <div className="rounded-2xl bg-zinc-900/50 border border-zinc-800 overflow-hidden transition-all duration-300">
+    <div className="rounded-2xl bg-zinc-900 border border-zinc-800 overflow-hidden transition-all duration-300">
       {/* Header / Summary Row */}
       <div
         onClick={() => setExpanded(!expanded)}

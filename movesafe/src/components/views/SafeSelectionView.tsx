@@ -71,7 +71,7 @@ export function SafeSelectionView({ onSelectSafe }: SafeSelectionViewProps) {
     };
 
     return (
-        <div className="h-full flex flex-col p-6 pt-safe md:p-10 bg-black relative overflow-hidden">
+        <div className="h-full flex flex-col p-6 pt-safe md:p-10 bg-zinc-950 relative overflow-hidden">
             {/* Background elements */}
             <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-900/10 rounded-full blur-[100px] pointer-events-none" />
 
@@ -88,7 +88,7 @@ export function SafeSelectionView({ onSelectSafe }: SafeSelectionViewProps) {
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     onClick={() => disconnect()}
-                    className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-zinc-900/50 border border-zinc-800 hover:border-red-500/30 hover:bg-red-500/5 transition-all group shrink-0 cursor-pointer"
+                    className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-zinc-900 border border-zinc-800 hover:border-red-500/30 hover:bg-red-500/10 transition-all group shrink-0 cursor-pointer"
                 >
                     <LogOut className="w-4 h-4 text-zinc-500 group-hover:text-red-400 transition-colors" />
                     <span className="text-xs font-bold text-zinc-400 group-hover:text-red-400 transition-colors hidden sm:inline">Logout</span>
@@ -117,7 +117,7 @@ export function SafeSelectionView({ onSelectSafe }: SafeSelectionViewProps) {
                                         whileHover={{ scale: 1.02, y: -2 }}
                                         whileTap={{ scale: 0.98 }}
                                         onClick={() => onSelectSafe(safe.address)}
-                                        className="group relative p-5 rounded-3xl bg-zinc-900/50 border border-zinc-800 hover:bg-zinc-900 hover:border-zinc-700 transition-all text-left flex flex-col justify-between min-h-[160px] cursor-pointer"
+                                        className="group relative p-5 rounded-3xl bg-zinc-900 border border-zinc-800 hover:bg-zinc-800 hover:border-zinc-700 transition-all text-left flex flex-col justify-between min-h-[160px] cursor-pointer"
                                     >
                                         <div className="flex items-start justify-between mb-4">
                                             <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-zinc-800 to-zinc-900 border border-zinc-700/50 flex items-center justify-center group-hover:from-blue-500/20 group-hover:to-indigo-500/20 group-hover:border-blue-500/30 transition-all">

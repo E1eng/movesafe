@@ -46,7 +46,7 @@ const nextConfig: NextConfig = {
               "style-src 'self' 'unsafe-inline'",
               "img-src 'self' data: https:",
               "font-src 'self' data:",
-              "connect-src 'self' https://testnet.movementnetwork.xyz https://*.supabase.co wss://*.supabase.co",
+              "connect-src 'self' https: wss:",
               "frame-ancestors 'none'",
             ].join('; '),
           },

@@ -37,16 +37,43 @@ export function WalletSelector({ isOpen, onClose }: WalletSelectorProps) {
       onClose();
     } catch (error: unknown) {
       const errorMessage = (error as Error)?.message || String(error);
-      if (errorMessage.toLowerCase().includes('rejected')) {
+      const lowerMessage = errorMessage.toLowerCase();
+
+      // User rejected the connection
+      if (lowerMessage.includes('rejected') || lowerMessage.includes('denied') || lowerMessage.includes('cancelled')) {
         toast.info('Connection Cancelled', {
-          description: "You cancelled the request.",
+          description: "You cancelled the wallet connection.",
           duration: 3000
         });
-      } else {
-        toast.error('Connection Failed', {
-          description: errorMessage
+      }
+      // Wallet not found/installed
+      else if (lowerMessage.includes('not found') || lowerMessage.includes('not installed')) {
+        toast.error('Wallet Not Found', {
+          description: `Please install ${wallet.name} extension and refresh the page.`,
+          duration: 5000
         });
-        console.error('Failed to connect:', error);
+      }
+      // Network/connection issues
+      else if (lowerMessage.includes('network') || lowerMessage.includes('fetch') || lowerMessage.includes('timeout')) {
+        toast.error('Network Error', {
+          description: 'Unable to connect. Please check your internet connection.',
+          duration: 5000
+        });
+      }
+      // Wallet locked
+      else if (lowerMessage.includes('locked') || lowerMessage.includes('unlock')) {
+        toast.error('Wallet Locked', {
+          description: 'Please unlock your wallet and try again.',
+          duration: 5000
+        });
+      }
+      // Generic error
+      else {
+        toast.error('Connection Failed', {
+          description: 'Unable to connect wallet. Please try again.',
+          duration: 5000
+        });
+        console.error('Wallet connection error:', error);
       }
     } finally {
       setIsConnecting(false);

@@ -1,7 +1,6 @@
 'use client';
 
 import { AptosWalletAdapterProvider } from '@aptos-labs/wallet-adapter-react';
-import { Network } from '@aptos-labs/ts-sdk';
 import { ReactNode, useState, useEffect } from 'react';
 import { ErrorBoundary } from '@/components/layout/ErrorBoundary';
 
@@ -22,9 +21,6 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         autoConnect={true}
         optInWallets={[]}
         disableTelemetry={true}
-        dappConfig={{
-          network: Network.TESTNET,
-        }}
         onError={(error) => {
           console.warn('Wallet adapter error:', error);
         }}

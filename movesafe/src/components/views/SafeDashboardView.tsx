@@ -251,9 +251,9 @@ export function SafeDashboardView({ safeAddress, onBack }: SafeDashboardViewProp
     );
 
     return (
-        <div className="flex h-full bg-black text-white">
+        <div className="flex h-full bg-zinc-950 text-white">
             {/* LEFT SIDEBAR - Desktop Only */}
-            <div className="hidden md:flex w-[260px] flex-col border-r border-zinc-800/50 p-6 bg-zinc-950/30">
+            <div className="hidden md:flex w-[260px] flex-col border-r border-zinc-800 p-6 bg-zinc-900">
                 {/* Safe Header */}
                 <div className="mb-8">
                     <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center mb-4 shadow-lg shadow-blue-900/20">
@@ -306,15 +306,18 @@ export function SafeDashboardView({ safeAddress, onBack }: SafeDashboardViewProp
                             <Menu className="w-6 h-6" />
                         </button>
 
-                        <div>
-                            <h1 className="text-xs md:text-sm font-medium text-zinc-500">Total Balance</h1>
-                            <p className="text-xl md:text-2xl font-bold tracking-tight">{balance.toLocaleString('en-US', { minimumFractionDigits: 4 })} <span className="text-sm md:text-base font-normal text-zinc-600">MOVE</span></p>
-                            {movePrice && (
-                                <p className="text-xs md:text-sm text-zinc-500 mt-1">
-                                    ≈ ${(balance * movePrice).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD
-                                    <span className="text-zinc-600 ml-1">(@ ${movePrice.toFixed(4)})</span>
+                        <div className="min-w-0">
+                            <h1 className="text-xs font-medium text-zinc-500">Total Balance</h1>
+                            <div className="flex items-baseline gap-2 flex-wrap">
+                                <p className="text-xl md:text-2xl font-bold tracking-tight whitespace-nowrap">
+                                    {balance.toLocaleString('en-US', { minimumFractionDigits: 4 })} <span className="text-sm font-normal text-zinc-600">MOVE</span>
                                 </p>
-                            )}
+                                {movePrice && (
+                                    <span className="text-xs text-zinc-500 whitespace-nowrap">
+                                        ≈ ${(balance * movePrice).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                    </span>
+                                )}
+                            </div>
                         </div>
                     </div>
 
