@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     ArrowLeft, Copy, Plus, Menu, CheckCircle2,
-    Wallet, Users, History, Settings, Coins, LogOut, Loader2, X
+    Wallet, Users, History, Settings, Coins, LogOut, Loader2, X, Inbox, Clock, Download
 } from 'lucide-react';
 import { supabase, Safe, Transaction } from '@/lib/supabase';
 import { TransactionQueueItem } from '@/components/features/transaction/TransactionQueueItem';
@@ -197,7 +197,11 @@ export function SafeDashboardView({ safeAddress, onBack }: SafeDashboardViewProp
             });
 
             await aptos.waitForTransaction({ transactionHash: response.hash });
-            await supabase.from('transactions').update({ status: 'EXECUTED', tx_hash: response.hash }).eq('id', tx.id);
+            await supabase.from('transactions').update({
+                status: 'EXECUTED',
+                tx_hash: response.hash,
+                executed_at: new Date().toISOString()
+            }).eq('id', tx.id);
 
             toast.success("Transaction Executed!");
             loadData();
@@ -346,10 +350,19 @@ export function SafeDashboardView({ safeAddress, onBack }: SafeDashboardViewProp
                                 </div>
 
                                 {transactions.length === 0 ? (
-                                    <div className="flex flex-col items-center justify-center py-20 border border-dashed border-zinc-700 rounded-3xl bg-zinc-900/20">
-                                        <CheckCircle2 className="w-12 h-12 text-zinc-800 mb-4" />
-                                        <p className="text-zinc-400 font-medium">All caught up</p>
-                                        <p className="text-zinc-500 text-sm">No pending transactions</p>
+                                    <div className="flex flex-col items-center justify-center py-16 border border-dashed border-zinc-700 rounded-3xl bg-gradient-to-b from-zinc-900/50 to-zinc-950/50">
+                                        <div className="w-20 h-20 rounded-full bg-gradient-to-br from-zinc-800 to-zinc-900 flex items-center justify-center mb-6 shadow-lg shadow-black/20">
+                                            <Inbox className="w-10 h-10 text-zinc-500" />
+                                        </div>
+                                        <h3 className="text-lg font-semibold text-white mb-2">All caught up!</h3>
+                                        <p className="text-zinc-400 text-sm text-center max-w-xs mb-6">No pending transactions in the queue. Create one to get started.</p>
+                                        <button
+                                            onClick={() => setIsTxModalOpen(true)}
+                                            className="flex items-center gap-2 px-4 py-2 bg-white text-black rounded-full text-sm font-medium hover:bg-zinc-200 transition-colors cursor-pointer"
+                                        >
+                                            <Plus className="w-4 h-4" />
+                                            New Transaction
+                                        </button>
                                     </div>
                                 ) : (
                                     transactions.map(tx => {
@@ -394,12 +407,45 @@ export function SafeDashboardView({ safeAddress, onBack }: SafeDashboardViewProp
                                 initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
                                 className="space-y-4 max-w-3xl"
                             >
-                                <h3 className="text-lg font-semibold mb-4">Transaction History</h3>
+                                <div className="flex items-center justify-between mb-4">
+                                    <h3 className="text-lg font-semibold">Transaction History</h3>
+                                    {history.length > 0 && (
+                                        <button
+                                            onClick={() => {
+                                                // Generate CSV
+                                                const headers = ['Date', 'Type', 'Amount (MOVE)', 'Recipient', 'Tx Hash', 'Memo'];
+                                                const rows = history.map(tx => {
+                                                    const args = tx.payload.functionArguments;
+                                                    const amount = args && args.length >= 2 ? (parseFloat(String(args[1])) / 100000000).toFixed(8) : '0';
+                                                    const recipient = args && args.length >= 1 ? String(args[0]) : 'Unknown';
+                                                    const date = tx.executed_at ? new Date(tx.executed_at).toISOString().split('T')[0] : 'N/A';
+                                                    return [date, 'Send', amount, recipient, tx.tx_hash || '', tx.memo || ''].join(',');
+                                                });
+                                                const csv = [headers.join(','), ...rows].join('\n');
+                                                const blob = new Blob([csv], { type: 'text/csv' });
+                                                const url = URL.createObjectURL(blob);
+                                                const a = document.createElement('a');
+                                                a.href = url;
+                                                a.download = `movesafe-history-${safeAddress.slice(0, 8)}.csv`;
+                                                a.click();
+                                                URL.revokeObjectURL(url);
+                                                toast.success('History exported!');
+                                            }}
+                                            className="flex items-center gap-2 px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-lg text-xs font-medium transition-colors cursor-pointer"
+                                        >
+                                            <Download className="w-3.5 h-3.5" />
+                                            Export CSV
+                                        </button>
+                                    )}
+                                </div>
 
                                 {history.length === 0 ? (
-                                    <div className="flex flex-col items-center justify-center py-20 border border-dashed border-zinc-800 rounded-3xl bg-zinc-900/20">
-                                        <CheckCircle2 className="w-12 h-12 text-zinc-700 mb-3" />
-                                        <p className="text-zinc-400 text-sm">No executed transactions yet</p>
+                                    <div className="flex flex-col items-center justify-center py-16 border border-dashed border-zinc-800 rounded-3xl bg-gradient-to-b from-zinc-900/50 to-zinc-950/50">
+                                        <div className="w-20 h-20 rounded-full bg-gradient-to-br from-zinc-800 to-zinc-900 flex items-center justify-center mb-6 shadow-lg shadow-black/20">
+                                            <Clock className="w-10 h-10 text-zinc-500" />
+                                        </div>
+                                        <h3 className="text-lg font-semibold text-white mb-2">No history yet</h3>
+                                        <p className="text-zinc-400 text-sm text-center max-w-xs">Executed transactions will appear here. Start by creating and executing your first transaction.</p>
                                     </div>
                                 ) : (
                                     history.map(tx => {

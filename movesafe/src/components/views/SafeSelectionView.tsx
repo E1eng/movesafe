@@ -135,14 +135,21 @@ export function SafeSelectionView({ onSelectSafe }: SafeSelectionViewProps) {
                                 ))}
                             </motion.div>
                         ) : (
-                            <div className="h-full flex flex-col items-center justify-center text-center p-8 bg-zinc-900/30 rounded-3xl border border-dashed border-zinc-800">
-                                <div className="w-16 h-16 rounded-3xl bg-zinc-900 flex items-center justify-center mb-4">
-                                    <Shield className="w-8 h-8 text-zinc-500" />
+                            <div className="h-full flex flex-col items-center justify-center text-center p-8 bg-gradient-to-b from-zinc-900/50 to-zinc-950/50 rounded-3xl border border-dashed border-zinc-800">
+                                <div className="w-20 h-20 rounded-full bg-gradient-to-br from-zinc-800 to-zinc-900 flex items-center justify-center mb-6 shadow-lg shadow-black/20">
+                                    <Shield className="w-10 h-10 text-zinc-500" />
                                 </div>
                                 <h3 className="text-xl font-bold text-white mb-2">No Safes Found</h3>
-                                <p className="text-zinc-400 max-w-xs mx-auto">
-                                    You aren't associated with any multi-signature safes yet.
+                                <p className="text-zinc-400 max-w-xs mx-auto mb-6">
+                                    You aren't associated with any multi-signature safes yet. Create your first safe to get started.
                                 </p>
+                                <button
+                                    onClick={() => setIsCreateOpen(true)}
+                                    className="flex items-center gap-2 px-4 py-2 bg-white text-black rounded-full text-sm font-medium hover:bg-zinc-200 transition-colors cursor-pointer"
+                                >
+                                    <Plus className="w-4 h-4" />
+                                    Create Safe
+                                </button>
                             </div>
                         )}
                     </div>
