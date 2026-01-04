@@ -22,8 +22,9 @@ export function DashboardSidebar({ safe, safeAddress, activeTab, onSwitchTab, on
         <div className="hidden md:flex w-[260px] flex-col border-r border-zinc-800 p-6 bg-zinc-900">
             {/* Safe Header */}
             <div className="mb-8">
-                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center mb-4 shadow-lg shadow-blue-900/20">
-                    <Wallet className="w-6 h-6 text-white" />
+                <div className="w-12 h-12 rounded-2xl bg-transparent flex items-center justify-center mb-4 shadow-lg shadow-blue-900/20 overflow-hidden">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src="/icon-92x92.png" alt="Safe Logo" className="w-full h-full object-cover" />
                 </div>
                 <h2 className="font-bold text-xl mb-1">{safe.name}</h2>
                 <button

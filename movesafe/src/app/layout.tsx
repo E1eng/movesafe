@@ -9,6 +9,9 @@ const inter = Inter({ subsets: ["latin"] });
 export const metadata: Metadata = {
   title: "MoveSafe",
   description: "Secure Multisig for Movement Network",
+  icons: {
+    icon: '/movesafe%2032x32.png',
+  },
 };
 
 export default function RootLayout({

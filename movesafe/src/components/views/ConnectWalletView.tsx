@@ -14,9 +14,10 @@ export function ConnectWalletView() {
                 <motion.div
                     initial={{ scale: 0.8, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
-                    className="w-24 h-24 rounded-3xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-2xl shadow-blue-500/20"
+                    className="w-24 h-24 rounded-3xl bg-transparent flex items-center justify-center shadow-2xl shadow-blue-500/20 overflow-hidden"
                 >
-                    <Shield className="w-12 h-12 text-white" />
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src="/icon-92x92.png" alt="MoveSafe Logo" className="w-full h-full object-cover" />
                 </motion.div>
 
                 <div className="space-y-2">
