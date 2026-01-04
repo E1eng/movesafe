@@ -265,7 +265,7 @@ export function SafeDashboardView({ safeAddress, onBack }: SafeDashboardViewProp
                             navigator.clipboard.writeText(safeAddress);
                             toast.success("Address copied");
                         }}
-                        className="flex items-center gap-2 text-sm font-mono text-zinc-400 hover:text-zinc-300 transition-colors bg-zinc-900/50 px-2 py-1 rounded-md w-fit cursor-pointer"
+                        className="flex items-center gap-2 text-sm font-mono text-zinc-400 hover:text-zinc-300 transition-colors bg-zinc-700/50 px-2 py-1 rounded-md w-fit cursor-pointer"
                     >
                         {safeAddress.slice(0, 8)}...{safeAddress.slice(-6)}
                         <Copy className="w-3 h-3" />
@@ -477,7 +477,6 @@ export function SafeDashboardView({ safeAddress, onBack }: SafeDashboardViewProp
                                     {movePrice && (
                                         <div className="text-sm text-zinc-400">≈ ${(balance * movePrice).toFixed(2)} USD</div>
                                     )}
-                                    <div className="text-sm text-zinc-500">Movement Network</div>
                                 </div>
                                 {/* Placeholder for other tokens */}
                                 <div className="p-6 border border-dashed border-zinc-800 rounded-3xl flex items-center justify-center text-zinc-400 text-sm h-full min-h-[160px]">
