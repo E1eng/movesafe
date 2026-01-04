@@ -296,7 +296,7 @@ export function SafeDashboardView({ safeAddress, onBack }: SafeDashboardViewProp
             {/* RIGHT CONTENT */}
             <div className="flex-1 flex flex-col min-w-0 bg-transparent relative">
                 {/* Top Bar */}
-                <div className="h-auto md:h-20 min-h-[5rem] flex items-center justify-between px-6 md:px-8 border-b border-zinc-800/50 z-20 bg-black/50 backdrop-blur-sm pt-safe pt-4 pb-4 md:pt-0 md:pb-0 sticky top-0">
+                <div className="h-auto md:h-20 min-h-[5rem] flex items-center justify-between px-6 md:px-8 border-b border-zinc-700/50 z-20 bg-black/50 backdrop-blur-sm pt-safe pt-4 pb-4 md:pt-0 md:pb-0 sticky top-0">
                     <div className="flex items-center gap-4">
                         {/* Mobile Hamburger */}
                         <button
@@ -310,10 +310,10 @@ export function SafeDashboardView({ safeAddress, onBack }: SafeDashboardViewProp
                             <h1 className="text-xs font-medium text-zinc-500">Total Balance</h1>
                             <div className="flex items-baseline gap-2 flex-wrap">
                                 <p className="text-xl md:text-2xl font-bold tracking-tight whitespace-nowrap">
-                                    {balance.toLocaleString('en-US', { minimumFractionDigits: 4 })} <span className="text-sm font-normal text-zinc-600">MOVE</span>
+                                    {balance.toLocaleString('en-US', { minimumFractionDigits: 4 })} <span className="text-sm font-normal text-zinc-500">MOVE</span>
                                 </p>
                                 {movePrice && (
-                                    <span className="text-xs text-zinc-500 whitespace-nowrap">
+                                    <span className="text-xs text-zinc-200 whitespace-nowrap">
                                         ≈ ${(balance * movePrice).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                     </span>
                                 )}
@@ -342,14 +342,14 @@ export function SafeDashboardView({ safeAddress, onBack }: SafeDashboardViewProp
                             >
                                 <div className="flex items-center justify-between mb-4">
                                     <h3 className="text-lg font-semibold">Transaction Queue</h3>
-                                    <span className="text-xs font-mono px-2 py-1 bg-zinc-900 rounded text-zinc-500">Threshold: {safe.threshold} / {safe.owners.length}</span>
+                                    <span className="text-xs font-mono px-2 py-1 bg-zinc-900 rounded text-zinc-400">Threshold: {safe.threshold} / {safe.owners.length}</span>
                                 </div>
 
                                 {transactions.length === 0 ? (
-                                    <div className="flex flex-col items-center justify-center py-20 border border-dashed border-zinc-800 rounded-3xl bg-zinc-900/20">
+                                    <div className="flex flex-col items-center justify-center py-20 border border-dashed border-zinc-700 rounded-3xl bg-zinc-900/20">
                                         <CheckCircle2 className="w-12 h-12 text-zinc-800 mb-4" />
-                                        <p className="text-zinc-500 font-medium">All caught up</p>
-                                        <p className="text-zinc-600 text-sm">No pending transactions</p>
+                                        <p className="text-zinc-400 font-medium">All caught up</p>
+                                        <p className="text-zinc-500 text-sm">No pending transactions</p>
                                     </div>
                                 ) : (
                                     transactions.map(tx => {
