@@ -33,7 +33,7 @@ export function useMovePrice() {
                             globalPrice = data.movement.usd;
                             return globalPrice;
                         }
-                    } catch (e) {
+                    } catch {
                         // Silent fail, just return null. No mock data.
                     }
                     return globalPrice;
@@ -48,8 +48,8 @@ export function useMovePrice() {
                 if (result !== null) {
                     listeners.forEach(l => l(result));
                 }
-            } catch (e) {
-                console.error("Error awaiting price promise", e);
+            } catch {
+                // console.error("Error awaiting price promise", e);
             }
         };
 

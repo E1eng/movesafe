@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Users, Link as LinkIcon, Plus, Loader2, UserPlus, Edit3 } from 'lucide-react';
+import { X, Link as LinkIcon, Plus, Loader2, UserPlus, Edit3 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useWallet } from '@aptos-labs/wallet-adapter-react';
 import { aptos } from '@/lib/movement';
@@ -226,7 +226,7 @@ export function CreateSafeModal({ isOpen, onClose }: CreateSafeModalProps) {
                                         className="bg-zinc-950 border-zinc-800 text-white rounded-xl"
                                     />
                                     <p className="text-xs text-zinc-500">
-                                        You'll share an invite link. Others join by connecting their wallet.
+                                        You&apos;ll share an invite link. Others join by connecting their wallet.
                                     </p>
                                 </div>
 

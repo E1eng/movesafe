@@ -22,8 +22,6 @@ export function NewTransactionModal({
   isOpen,
   onClose,
   safeAddress,
-  safeThreshold,
-  safeOwners,
   onTransactionCreated,
 }: NewTransactionModalProps) {
   const { account } = useWallet();

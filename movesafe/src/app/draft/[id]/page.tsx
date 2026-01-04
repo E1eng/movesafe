@@ -2,11 +2,11 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
-import { ArrowLeft, Copy, Shield, Users, Link as LinkIcon, CheckCircle2, Loader2 } from 'lucide-react';
+import { ArrowLeft, Copy, Shield, Link as LinkIcon, CheckCircle2, Loader2 } from 'lucide-react';
 import { useWallet } from '@aptos-labs/wallet-adapter-react';
 import { supabase, SafeDraft } from '@/lib/supabase';
 import { generateSafeAddress } from '@/lib/multisig';
-import { aptos, MOVEMENT_CONFIG } from '@/lib/movement';
+import { aptos } from '@/lib/movement';
 import { toast } from 'sonner';
 
 export default function DraftSafePage() {

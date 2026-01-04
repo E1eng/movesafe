@@ -59,7 +59,6 @@ export function useTransaction({ safeAddress, creatorAddress, onSuccess }: UseTr
         if (err?.status === 404 || err?.errorCode === 'account_not_found') {
           throw new Error(`Safe address not activated. Please fund ${safeAddress} with MOVE first.`);
         }
-        console.error('Failed to fetch account info:', e);
         throw new Error('Failed to fetch safe account info. Network might be congested.');
       }
 
@@ -137,7 +136,6 @@ export function useTransaction({ safeAddress, creatorAddress, onSuccess }: UseTr
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       setError(msg || 'An unexpected error occurred');
-      console.error('Transaction Creation Failed:', err);
     } finally {
       setLoading(false);
     }

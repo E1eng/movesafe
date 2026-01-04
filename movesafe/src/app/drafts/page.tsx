@@ -98,7 +98,7 @@ export default function DraftsPage() {
           </div>
           <h3 className="text-xl font-bold mb-2">No Pending Drafts</h3>
           <p className="text-zinc-400 max-w-xs mb-6">
-            Create a new safe with "Invite" mode to generate a shareable invite link for co-signers to join.
+            Create a new safe with &quot;Invite&quot; mode to generate a shareable invite link for co-signers to join.
           </p>
           <button
             onClick={() => router.push('/select')}

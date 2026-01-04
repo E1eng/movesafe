@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     Copy, Plus, Menu, CheckCircle2,
-    Wallet, Users, History, Coins, LogOut, Loader2, X, Inbox, Clock, Download
+    Wallet, Users, History, Coins, LogOut, Loader2, X, Inbox, Clock, Download, LucideIcon
 } from 'lucide-react';
 import { supabase, Safe, Transaction, Signature } from '@/lib/supabase';
 import { TransactionQueueItem } from '@/components/features/transaction/TransactionQueueItem';
@@ -47,7 +47,7 @@ export function SafeDashboardView({ safeAddress, onBack }: SafeDashboardViewProp
     const [signingTxId, setSigningTxId] = useState<string | null>(null);
     const [executingTxId, setExecutingTxId] = useState<string | null>(null);
 
-    const loadData = async () => {
+    const loadData = useCallback(async () => {
         try {
             // 1. Fetch Safe Info
             const { data: safeData } = await supabase.from('safes').select('*').eq('address', safeAddress).single();
@@ -80,10 +80,11 @@ export function SafeDashboardView({ safeAddress, onBack }: SafeDashboardViewProp
                 const resources = await aptos.getAccountResources({ accountAddress: safeAddress });
                 const coinResource = resources.find((r) => r.type === "0x1::coin::CoinStore<0x1::aptos_coin::AptosCoin>");
                 if (coinResource) {
-                    const val = (coinResource.data as any).coin.value;
+                    const data = coinResource.data as { coin: { value: string } };
+                    const val = data.coin.value;
                     setBalance(Number(val) / 100_000_000); // 8 decimals for MOVE
                 }
-            } catch (err) {
+            } catch {
                 // Balance fetch failed, safe might be new
 
                 setBalance(0);
@@ -94,7 +95,7 @@ export function SafeDashboardView({ safeAddress, onBack }: SafeDashboardViewProp
         } finally {
             setLoading(false);
         }
-    };
+    }, [safeAddress]);
 
     useEffect(() => {
         setLoading(true);
@@ -110,7 +111,7 @@ export function SafeDashboardView({ safeAddress, onBack }: SafeDashboardViewProp
             .subscribe();
 
         return () => { sub.unsubscribe(); };
-    }, [safeAddress]);
+    }, [safeAddress, loadData]);
 
     // --- Actions (Sign/Execute) ---
     const handleSign = async (tx: ExtendedTransaction) => {
@@ -137,6 +138,7 @@ export function SafeDashboardView({ safeAddress, onBack }: SafeDashboardViewProp
 
             // Extract signature from authenticator - handle different possible structures
             let sigHex: string;
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const auth = senderAuthenticator as any;
 
             if (auth?.authenticator?.signature) {
@@ -159,9 +161,10 @@ export function SafeDashboardView({ safeAddress, onBack }: SafeDashboardViewProp
             if (error) throw error;
             toast.success("Signed successfully");
             loadData();
-        } catch (e: any) {
+        } catch (e: unknown) {
             console.error("Signing failed", e);
-            toast.error("Failed to sign: " + e.message);
+            const msg = e instanceof Error ? e.message : String(e);
+            toast.error("Failed to sign: " + msg);
         } finally {
             setSigningTxId(null);
         }
@@ -193,6 +196,7 @@ export function SafeDashboardView({ safeAddress, onBack }: SafeDashboardViewProp
             });
 
             const response = await aptos.transaction.submit.simple({
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 transaction: buildTx as any,
                 senderAuthenticator: multiSigAuth
             });
@@ -206,9 +210,10 @@ export function SafeDashboardView({ safeAddress, onBack }: SafeDashboardViewProp
 
             toast.success("Transaction Executed!");
             loadData();
-        } catch (e: any) {
+        } catch (e: unknown) {
             console.error("Execution failed", e);
-            toast.error("Execution failed: " + e.message);
+            const msg = e instanceof Error ? e.message : String(e);
+            toast.error("Execution failed: " + msg);
         } finally {
             setExecutingTxId(null);
         }
@@ -225,8 +230,8 @@ export function SafeDashboardView({ safeAddress, onBack }: SafeDashboardViewProp
             if (error) throw error;
             toast.success("Transaction discarded");
             loadData();
-        } catch (e: any) {
-            console.error("Delete failed", e);
+            loadData();
+        } catch {
             toast.error("Failed to delete");
         } finally {
             setConfirmDeleteId(null);
@@ -239,7 +244,7 @@ export function SafeDashboardView({ safeAddress, onBack }: SafeDashboardViewProp
         </div>
     );
 
-    const NavItem = ({ id, label, icon: Icon, onSelect }: { id: Tab, label: string, icon: any, onSelect?: () => void }) => (
+    const NavItem = ({ id, label, icon: Icon, onSelect }: { id: Tab, label: string, icon: LucideIcon, onSelect?: () => void }) => (
         <button
             onClick={() => {
                 setActiveTab(id);
@@ -469,7 +474,7 @@ export function SafeDashboardView({ safeAddress, onBack }: SafeDashboardViewProp
                                                         To: <code className="font-mono bg-zinc-800 px-1 py-0.5 rounded">{recipient.slice(0, 8)}...{recipient.slice(-6)}</code>
                                                     </div>
                                                     {tx.memo && (
-                                                        <div className="text-xs text-zinc-400 mt-1 italic">"{tx.memo}"</div>
+                                                        <div className="text-xs text-zinc-400 mt-1 italic">&quot;{tx.memo}&quot;</div>
                                                     )}
                                                 </div>
                                                 <div className="text-right">

@@ -133,7 +133,7 @@ export default function JoinDraftSafePage() {
                         <Shield className="w-8 h-8 text-blue-400" />
                     </div>
                     <h1 className="text-2xl font-bold mb-2">Join Safe</h1>
-                    <p className="text-zinc-400">You've been invited to join a multisig safe</p>
+                    <p className="text-zinc-400">You&apos;ve been invited to join a multisig safe</p>
                 </div>
             </div>
 
@@ -171,7 +171,7 @@ export default function JoinDraftSafePage() {
                     <div className="p-5 rounded-3xl bg-green-500/10 border border-green-500/20 text-center">
                         <Check className="w-10 h-10 mx-auto mb-3 text-green-400" />
                         <p className="text-sm text-green-300 font-medium mb-4">
-                            You're already an owner of this safe!
+                            You&apos;re already an owner of this safe!
                         </p>
                         <button
                             onClick={() => router.push(`/draft/${draft.id}`)}

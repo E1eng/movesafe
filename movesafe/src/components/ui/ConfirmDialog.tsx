@@ -22,7 +22,6 @@ export function ConfirmDialog({
     title,
     description,
     confirmText = 'Confirm',
-    cancelText = 'Cancel',
     variant = 'default',
     loading = false,
 }: ConfirmDialogProps) {

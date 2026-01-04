@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { useWallet } from '@aptos-labs/wallet-adapter-react';
-import { Plus, Shield, Search, Loader2, ArrowRight, Wallet, LogOut, FileClock } from 'lucide-react';
+import { Plus, Shield, Loader2, ArrowRight, Wallet, LogOut, FileClock } from 'lucide-react';
 import { supabase, Safe } from '@/lib/supabase';
 import { CreateSafeModal } from '@/components/features/safe/CreateSafeModal';
 import { useRouter } from 'next/navigation';
@@ -65,10 +65,7 @@ export function SafeSelectionView({ onSelectSafe }: SafeSelectionViewProps) {
         }
     };
 
-    const item = {
-        hidden: { y: 20, opacity: 0 },
-        show: { y: 0, opacity: 1 }
-    };
+
 
     return (
         <div className="h-full flex flex-col p-6 pt-safe md:p-10 bg-zinc-950 relative overflow-hidden">
@@ -141,7 +138,7 @@ export function SafeSelectionView({ onSelectSafe }: SafeSelectionViewProps) {
                                 </div>
                                 <h3 className="text-xl font-bold text-white mb-2">No Safes Found</h3>
                                 <p className="text-zinc-400 max-w-xs mx-auto mb-6">
-                                    You aren't associated with any multi-signature safes yet. Create your first safe to get started.
+                                    You aren&apos;t associated with any multi-signature safes yet. Create your first safe to get started.
                                 </p>
                                 <button
                                     onClick={() => setIsCreateOpen(true)}

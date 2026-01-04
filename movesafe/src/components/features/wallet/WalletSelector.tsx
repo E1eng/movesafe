@@ -1,7 +1,7 @@
 'use client';
 
 import { useWallet } from '@aptos-labs/wallet-adapter-react';
-import { Modal, ModalFooter } from '@/components/ui/Modal';
+import { Modal } from '@/components/ui/Modal';
 import { toast } from 'sonner';
 import { Wallet, ExternalLink, Loader2 } from 'lucide-react';
 import { useState } from 'react';
@@ -152,6 +152,7 @@ export function WalletSelector({ isOpen, onClose }: WalletSelectorProps) {
                 `}
               >
                 {w.icon && (
+                  // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={w.icon}
                     alt={w.name}
