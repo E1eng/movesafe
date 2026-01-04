@@ -9,15 +9,34 @@ MoveSafe is a next-generation multisig wallet built exclusively for the **Moveme
 - **Native Security**: Uses the blockchain's built-in cryptographic primitives (MultiEd25519) instead of custom smart contract logic.
 - **Gas Efficient**: No heavy contract deployment required to create a Safe.
 - **Off-Chain Coordination**: Signatures are gathered off-chain via Supabase, meaning you only pay gas when executing the final transaction.
-- **Seamless UX**: Designed with a "startup-grade" aesthetic—clean, dark mode, and responsive.
+- **Seamless UX**: Designed with a modern aesthetic—clean, dark mode, and responsive.
 
 ## ✨ Key Features
 
 - **Create Safes instantly**: define owners and threshold (K-of-N).
 - **Asset Dashboard**: View MOVE token balance and USD valuation in real-time.
 - **Transaction Queue**: Propose transactions, collect signatures asynchronously, and execute when ready.
+- **Contextual Memos**: Attach text messages to transactions for clear record-keeping.
+- **Shareable Links**: Easily invite other owners by sharing the Safe URL.
 - **Transaction History**: Full history of executed transactions with CSV export capability.
 - **Visual Clarity**: Beautiful empty states and clear status indicators.
+
+## � Security & Architecture
+
+MoveSafe prioritizes security by adhering to a **"Don't Trust, Verify"** model.
+
+### 1. Non-Custodial & Trustless
+- **No Private Keys Stored**: MoveSafe *never* has access to your private keys. Signing happens locally in your wallet (Petra/Pontem).
+- **On-Chain Verification**: The Movement Blockchain is the ultimate source of truth. It verifies every signature against the on-chain public keys before executing any transaction.
+
+### 2. The Role of Supabase (Off-Chain Coordination)
+Values are stored in Supabase only to coordinate the multi-signature process efficiently:
+- **Gas Saving**: Instead of every owner submitting their signature on-chain (paying gas N times), signatures are collected off-chain.
+- **Atomic Execution**: Once the threshold is met, *any* owner can submit the final transaction with all attached signatures in a single on-chain interaction.
+- **Safety**: Even if the Supabase database were compromised, an attacker **cannot** steal funds because they do not possess the private keys required to generate valid signatures for the blockchain.
+
+### 3. Database Schema
+For a detailed look at the off-chain coordination tables, please refer to the [Database Schema](supabase/schema.sql).
 
 ## 🛠️ Tech Stack
 
@@ -44,24 +63,38 @@ Follow these steps to run MoveSafe locally:
    ```
 
 3. **Configure Environment**
-   Create a `.env.local` file in the root directory and add your Supabase credentials:
+   Create a `.env.local` file in the root directory and add your Supabase credentials. A template is available in `example.env`:
    ```env
    NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
    NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+   
+   # Movement Network Config (Defaults provided in example.env)
+   NEXT_PUBLIC_MOVEMENT_NETWORK=custom
+   NEXT_PUBLIC_MOVEMENT_FULLNODE=https://testnet.movementnetwork.xyz/v1
+   NEXT_PUBLIC_MOVEMENT_FAUCET=https://faucet.testnet.movementnetwork.xyz/
+   NEXT_PUBLIC_MOVEMENT_CHAIN_ID=250
+   
+   # Treasury Config (For Safe Creation Fee)
+   NEXT_PUBLIC_TREASURY_ADDRESS=0xYourTreasuryAddress
    ```
    *Note: Ensure your Supabase database has the `safes`, `transactions`, and `signatures` tables set up.*
 
 4. **Run the Development Server**
    ```bash
    npm run dev
+   # App runs on http://localhost:4000
    ```
 
-5. **Open locally**
-   Visit [http://localhost:3000](http://localhost:3000) to start managing your assets.
+## 🗺️ Roadmap
 
-## 📸 Screenshots
+- [ ] **Transaction Simulation**: Preview balance changes before signing.
+- [ ] **Address Book**: Manage frequent contacts and owner aliases.
+- [ ] **Safe Settings**: On-chain threshold rotation and owner management.
+- [ ] **Mainnet Launch**: Deploy to Movement Mainnet.
 
-*(Add your screenshots here: Dashboard, Create Transaction, History)*
+## � License
+
+This project is open source and available under the [MIT License](LICENSE).
 
 ---
 

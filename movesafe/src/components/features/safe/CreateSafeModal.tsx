@@ -5,6 +5,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Users, Link as LinkIcon, Plus, Loader2, UserPlus, Edit3 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useWallet } from '@aptos-labs/wallet-adapter-react';
+import { aptos } from '@/lib/movement';
+import { toast } from 'sonner';
 import { Input } from '@/components/ui/Input';
 import { useRouter } from 'next/navigation';
 
@@ -16,7 +18,7 @@ interface CreateSafeModalProps {
 type Mode = 'invite' | 'manual';
 
 export function CreateSafeModal({ isOpen, onClose }: CreateSafeModalProps) {
-    const { account } = useWallet();
+    const { account, signAndSubmitTransaction } = useWallet();
     const router = useRouter();
     const [loading, setLoading] = useState(false);
     const [mode, setMode] = useState<Mode>('invite');
@@ -73,6 +75,7 @@ export function CreateSafeModal({ isOpen, onClose }: CreateSafeModalProps) {
 
     // MANUAL MODE: Create Safe directly
     const handleCreateSafe = async () => {
+        if (!account) return;
         setLoading(true);
         try {
             const validOwners = owners.filter(o => o.trim()).map(o => o.toLowerCase());
@@ -86,8 +89,40 @@ export function CreateSafeModal({ isOpen, onClose }: CreateSafeModalProps) {
                 owners: validOwners
             };
 
+            // 1. Create Safe in Database
             const { error } = await supabase.from('safes').insert([safe]);
             if (error) throw error;
+
+            // 2. Activate Safe & Pay Fee
+            const treasuryAddr = process.env.NEXT_PUBLIC_TREASURY_ADDRESS;
+
+            if (treasuryAddr) {
+                toast.info("Please sign the transaction to Activate Safe & Pay Creation Fee (1 MOVE).");
+
+                try {
+                    const response = await signAndSubmitTransaction({
+                        sender: account.address,
+                        data: {
+                            function: "0x1::aptos_account::batch_transfer",
+                            functionArguments: [
+                                [safeAddress, treasuryAddr], // Recipients
+                                [100000, 99900000]           // Amounts: 0.001 and 0.999 MOVE (Octas)
+                            ]
+                        }
+                    });
+
+                    await aptos.waitForTransaction({ transactionHash: response.hash });
+                    toast.success("Safe Activated & Fee Paid!");
+                } catch (txError) {
+                    console.error("Activation failed:", txError);
+                    toast.error("Safe created but activation failed. Please fund it manually.");
+                    // We don't throw here to allow the UI to complete since DB entry exists
+                }
+            } else {
+                // Fallback: Just simple activation if no Treasury set (or dev mode)
+                // Or we skip auto-funding if not configured, relying on user to fund later
+                toast.warning("Treasury address not set. Please fund the Safe manually to activate.");
+            }
 
             // Local storage update
             const existing = JSON.parse(localStorage.getItem('movesafe_safes') || '[]');
@@ -95,8 +130,10 @@ export function CreateSafeModal({ isOpen, onClose }: CreateSafeModalProps) {
             localStorage.setItem('movesafe_safes', JSON.stringify(existing));
 
             onClose();
+            toast.success("Safe Created Successfully!");
         } catch (e) {
             console.error(e);
+            toast.error("Failed to create safe");
         } finally {
             setLoading(false);
         }
