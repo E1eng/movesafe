@@ -15,8 +15,8 @@ MoveSafe is a next-generation multisig wallet built exclusively for the **Moveme
 
 ## ✨ Key Features
 
-- **Create Safes instantly**: define owners and threshold (K-of-N).
-- **Activation & Fee**: One-step Safe activation with automated creation fee (1 MOVE).
+- **Create Safes instantly**: define owners and threshold (K-of-N) with automated creation fee (1 MOVE).
+- **Activation & Fee**: One-step Safe activation.
 - **Asset Dashboard**: View MOVE token balance and USD valuation in real-time.
 - **Transaction Queue**: Propose transactions, collect signatures asynchronously, and execute when ready.
 - **Contextual Memos**: Attach text messages to transactions for clear record-keeping.
@@ -32,14 +32,19 @@ MoveSafe prioritizes security by adhering to a **"Don't Trust, Verify"** model.
 - **No Private Keys Stored**: MoveSafe *never* has access to your private keys. Signing happens locally in your wallet (Petra/Pontem).
 - **On-Chain Verification**: The Movement Blockchain is the ultimate source of truth. It verifies every signature against the on-chain public keys before executing any transaction.
 
-### 2. The Role of Supabase (Off-Chain Coordination)
+### 2. Startup-Grade Security (Identity First)
+- **Public Key Enforcement**: Unlike standard address-based checks, MoveSafe enforces **Public Key** verification for all owners. This eliminates "identity mismatch" bugs common in address derivation.
+- **Fail-Safe Design**: The "Auto-Include" logic ensures that the creator of a Safe is *always* added as an owner, preventing accidental lockouts during manual creation.
+- **Robust RLS Policies**: Supabase Row-Level Security policies cross-verify your wallet session (`x-wallet-pubkey`) against your on-chain identity, ensuring only true owners can access Safe data.
+
+### 3. The Role of Supabase (Off-Chain Coordination)
 Values are stored in Supabase only to coordinate the multi-signature process efficiently:
 - **Gas Saving**: Instead of every owner submitting their signature on-chain (paying gas N times), signatures are collected off-chain.
 - **Atomic Execution**: Once the threshold is met, *any* owner can submit the final transaction with all attached signatures in a single on-chain interaction.
 - **Safety**: Even if the Supabase database were compromised, an attacker **cannot** steal funds because they do not possess the private keys required to generate valid signatures for the blockchain.
 
-### 3. Database Schema
-For a detailed look at the off-chain coordination tables, please refer to the [Database Schema](database/schema.sql).
+### 4. Database Schema
+For a detailed look at the off-chain coordination tables and strict RLS policies, please refer to the [Database Schema](database/schema.sql).
 
 ## 🛠️ Tech Stack
 

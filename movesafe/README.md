@@ -19,6 +19,7 @@ Required variables:
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 - `NEXT_PUBLIC_MOVEMENT_NETWORK` (custom/testnet)
+- `NEXT_PUBLIC_TREASURY_ADDRESS` (for safe creation fees)
 
 ### 3. Running Locally
 Start the development server:
@@ -49,7 +50,7 @@ This project follows a **Feature-based Architecture** to keep things modular.
 ### `src/lib` (Utilities)
 - **`multisig.ts`**: Core logic for `MultiEd25519` key generation and signature aggregation.
 - **`supabase.ts`**: Supabase client instance and type definitions.
-- **`movement.ts`**: Aptos SDK instance configured for Movement Network.
+- **`movement.ts`**: Aptos SDK instance (v5) configured for Movement Network.
 - **`errorMessages.ts`**: Centralized error handling and user-friendly messages.
 
 ### `src/hooks`
