@@ -97,7 +97,7 @@ export function SafeSelectionView({ onSelectSafe }: SafeSelectionViewProps) {
             ) : (
                 <div className="flex-1 flex flex-col md:flex-row gap-6 md:gap-8 min-h-0">
                     {/* Main Grid: Safes */}
-                    <div className="flex-1 overflow-y-auto pr-2 pt-2 overscroll-contain pb-safe order-2 md:order-1">
+                    <div className="flex-1 overflow-y-auto pr-2 pt-2 overscroll-contain pb-safe order-2 md:order-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none']">
                         {safes.length > 0 ? (
                             <motion.div
                                 variants={container}
