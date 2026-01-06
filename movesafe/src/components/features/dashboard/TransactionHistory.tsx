@@ -22,20 +22,39 @@ export function TransactionHistory({ history, safeAddress, movePrice }: Transact
                 {history.length > 0 && (
                     <button
                         onClick={() => {
-                            // Generate CSV
+                            // Robust CSV Generation
+                            const escapeCsv = (str: string) => {
+                                if (str === null || str === undefined) return '';
+                                const stringValue = String(str);
+                                if (stringValue.includes(',') || stringValue.includes('"') || stringValue.includes('\n')) {
+                                    return `"${stringValue.replace(/"/g, '""')}"`;
+                                }
+                                return stringValue;
+                            };
+
                             const headers = ['Date', 'Type', 'Amount (MOVE)', 'Recipient', 'Tx Hash', 'Memo'];
                             const rows = history.map(tx => {
                                 const { recipient, amount } = getTransferDetails(tx.payload);
+                                // formatAmount returns string with commas (e.g. "1,000.00") -> needs escaping
                                 const formattedAmount = formatAmount(amount);
-                                const date = tx.executed_at ? new Date(tx.executed_at).toISOString().split('T')[0] : 'N/A';
-                                return [date, 'Send', formattedAmount, recipient, tx.tx_hash || '', tx.memo || ''].join(',');
+                                const date = tx.executed_at ? new Date(tx.executed_at).toLocaleString() : 'N/A';
+
+                                return [
+                                    escapeCsv(date),
+                                    escapeCsv('Send'),
+                                    escapeCsv(formattedAmount),
+                                    escapeCsv(recipient),
+                                    escapeCsv(tx.tx_hash || ''),
+                                    escapeCsv(tx.memo || '')
+                                ].join(',');
                             });
+
                             const csv = [headers.join(','), ...rows].join('\n');
-                            const blob = new Blob([csv], { type: 'text/csv' });
+                            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
                             const url = URL.createObjectURL(blob);
                             const a = document.createElement('a');
                             a.href = url;
-                            a.download = `movesafe-history-${safeAddress.slice(0, 8)}.csv`;
+                            a.download = `movesafe-history-${safeAddress.slice(0, 8)}-${new Date().toISOString().split('T')[0]}.csv`;
                             a.click();
                             URL.revokeObjectURL(url);
                             toast.success('History exported!');
