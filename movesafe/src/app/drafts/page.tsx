@@ -150,14 +150,6 @@ export default function DraftsPage() {
                   {draft.threshold} sigs required
                 </div>
               </div>
-
-              {/* Progress Bar */}
-              <div className="h-1.5 bg-zinc-800 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-gradient-to-r from-blue-500 to-blue-400 rounded-full transition-all"
-                  style={{ width: `${((draft.owners?.length || 0) / draft.owner_limit) * 100}%` }}
-                />
-              </div>
             </motion.button>
           ))}
         </motion.div>
