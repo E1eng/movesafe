@@ -143,8 +143,8 @@ export default function DraftSafePage() {
           });
           localStorage.setItem('movesafe_safes', JSON.stringify(existing));
         }
-      } catch (e) {
-        console.warn("Failed to update local storage:", e);
+      } catch {
+        // Silent fail
       }
 
       toast.success('Safe finalized successfully!');

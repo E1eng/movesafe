@@ -23,7 +23,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         optInWallets={[]}
         disableTelemetry={true}
         onError={(error) => {
-          console.warn('Wallet adapter error:', error);
+          // Silent catch for adapter errors to keep console clean
         }}
       >
         {children}

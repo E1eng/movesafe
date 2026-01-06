@@ -45,8 +45,8 @@ export default function DraftsPage() {
         );
 
         setDrafts(myDrafts);
-      } catch (e) {
-        console.error('Failed to load drafts:', e);
+      } catch {
+        // Silent fail for UI polish
       } finally {
         setLoading(false);
       }

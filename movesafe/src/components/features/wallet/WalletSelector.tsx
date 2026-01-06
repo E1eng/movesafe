@@ -73,7 +73,6 @@ export function WalletSelector({ isOpen, onClose }: WalletSelectorProps) {
           description: 'Unable to connect wallet. Please try again.',
           duration: 5000
         });
-        console.error('Wallet connection error:', error);
       }
     } finally {
       setIsConnecting(false);
