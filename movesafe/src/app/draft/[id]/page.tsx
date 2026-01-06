@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { ArrowLeft, Copy, Shield, Link as LinkIcon, CheckCircle2, Loader2 } from 'lucide-react';
 import { useWallet } from '@aptos-labs/wallet-adapter-react';
-import { supabase, SafeDraft } from '@/lib/supabase';
+import { supabase, SafeDraft, getSupabaseWithWallet } from '@/lib/supabase';
 import { generateSafeAddress } from '@/lib/multisig';
 import { aptos } from '@/lib/movement';
 import { toast } from 'sonner';
@@ -16,7 +16,7 @@ export default function DraftSafePage() {
   const draftId = String(params?.id || '');
   const adminTokenFromQuery = searchParams.get('admin') || '';
 
-  const { connected, account, signTransaction } = useWallet();
+  const { connected, account, signAndSubmitTransaction } = useWallet();
 
   const [draft, setDraft] = useState<SafeDraft | null>(null);
   const [loading, setLoading] = useState(true);
@@ -78,7 +78,7 @@ export default function DraftSafePage() {
     } catch { }
   }, [adminTokenFromQuery, draftId]);
 
-  const canFinalize = !!draft && !!adminToken && draft.status === 'DRAFT';
+  const canFinalize = !!draft && (isOwner || !!adminToken) && draft.status === 'DRAFT' && (draft.owners?.length || 0) >= draft.threshold;
 
   const handleCopy = async () => {
     try {
@@ -88,7 +88,7 @@ export default function DraftSafePage() {
   };
 
   const handleFinalize = async () => {
-    if (!draft || !adminToken || !connected || !account) return;
+    if (!draft || !connected || !account || (!isOwner && !adminToken)) return;
 
     const owners = (draft.owners || []).map((o) => String(o).toLowerCase());
     if (owners.length < draft.threshold) {
@@ -100,57 +100,62 @@ export default function DraftSafePage() {
     setError(null);
 
     try {
+      // 1. Generate Safe Address
       const safeAddress = generateSafeAddress(owners, draft.threshold);
+      console.log("Generating Safe Address:", safeAddress);
 
-      // Activate on-chain
-      try {
-        await aptos.getAccountInfo({ accountAddress: safeAddress });
-      } catch {
-        if (!signTransaction) throw new Error('Wallet does not support signing');
+      // 2. Activate Safe Account (0.0001 MOVE)
+      toast.info(`Activating Safe account (0.0001 MOVE)...`);
 
-        const rawTxn = await aptos.transaction.build.simple({
-          sender: account.address.toString(),
-          data: {
-            function: '0x1::aptos_account::transfer',
-            typeArguments: [],
-            functionArguments: [safeAddress, '1000000'], // 0.01 MOVE
-          },
-        });
+      const response = await signAndSubmitTransaction({
+        data: {
+          function: '0x1::aptos_account::transfer',
+          functionArguments: [safeAddress, "10000"], // 0.0001 MOVE
+        }
+      });
 
-        const signed = await signTransaction({ transactionOrPayload: rawTxn });
-        const committed = await aptos.transaction.submit.simple({
-          transaction: rawTxn,
-          senderAuthenticator: signed.authenticator,
-        });
-        await aptos.waitForTransaction({ transactionHash: committed.hash });
-      }
+      // 3. Wait for confirmation
+      await aptos.waitForTransaction({ transactionHash: response.hash });
+      toast.success('Safe account activated on-chain!');
 
-      const { error: finalizeError } = await supabase.rpc('finalize_safe_draft', {
+      // 4. Authorize and Finalize in Supabase
+      const walletClient = getSupabaseWithWallet(account.address.toString(), account.publicKey?.toString());
+
+      const { error: finalizeError } = await walletClient.rpc('finalize_safe_draft', {
         draft_id: draft.id,
-        admin_token: adminToken,
+        admin_token: adminToken || '',
         safe_address: safeAddress,
       });
 
-      if (finalizeError) throw finalizeError;
+      if (finalizeError) {
+        console.error("Supabase Finalization Error:", finalizeError);
+        throw new Error(`Platform finalization failed: ${finalizeError.message}`);
+      }
 
-      // Cache locally
+      // 5. Cache locally for UI responsiveness
       try {
         const existing = JSON.parse(localStorage.getItem('movesafe_safes') || '[]');
-        existing.unshift({
-          address: safeAddress,
-          name: draft.name,
-          threshold: draft.threshold,
-          owners,
-          createdAt: new Date().toISOString(),
-        });
-        localStorage.setItem('movesafe_safes', JSON.stringify(existing));
-      } catch { }
+        if (!existing.find((s: any) => s.address === safeAddress)) {
+          existing.unshift({
+            address: safeAddress,
+            name: draft.name,
+            threshold: draft.threshold,
+            owners,
+            createdAt: new Date().toISOString(),
+          });
+          localStorage.setItem('movesafe_safes', JSON.stringify(existing));
+        }
+      } catch (e) {
+        console.warn("Failed to update local storage:", e);
+      }
 
-      toast.success('Safe finalized!');
+      toast.success('Safe finalized successfully!');
       router.push(`/dashboard?safe=${safeAddress}`);
-    } catch (e: unknown) {
-      const err = e as Error;
-      setError(err?.message || 'Failed to finalize draft');
+    } catch (e: any) {
+      console.error('Finalization error:', e);
+      const msg = e.message || 'Finalization failed. Please check your wallet and try again.';
+      setError(msg);
+      toast.error(msg);
     } finally {
       setFinalizing(false);
     }
@@ -288,7 +293,7 @@ export default function DraftSafePage() {
           >
             {finalizing && <Loader2 className="w-4 h-4 animate-spin" />}
             <Shield className="w-5 h-5" />
-            {finalizing ? 'Finalizing...' : canFinalize ? 'Finalize & Create Safe' : 'Missing Admin Token'}
+            {finalizing ? 'Finalizing...' : canFinalize ? 'Finalize & Activate Safe (0.0001 MOVE)' : (draft.owners?.length || 0) < draft.threshold ? 'Waiting for members...' : 'Not Authorized'}
           </button>
         </div>
       )}

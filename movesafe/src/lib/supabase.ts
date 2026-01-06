@@ -6,13 +6,14 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 // Default client (for operations that don't need wallet auth)
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-// Factory function to create a Supabase client with wallet address header
+// Factory function to create a Supabase client with wallet identity headers
 // This is used for RLS-protected operations
-export function getSupabaseWithWallet(walletAddress: string): SupabaseClient {
+export function getSupabaseWithWallet(walletAddress: string, publicKey?: string): SupabaseClient {
   return createClient(supabaseUrl, supabaseAnonKey, {
     global: {
       headers: {
         'x-wallet-address': walletAddress.toLowerCase(),
+        'x-wallet-pubkey': (publicKey || '').toLowerCase(),
       },
     },
   });

@@ -6,6 +6,7 @@ import { createTransactionPayload, TransactionPayload } from '@/lib/multisig';
 interface UseTransactionProps {
   safeAddress: string;
   creatorAddress: string;
+  creatorPubKey?: string;
   onSuccess?: () => void;
 }
 
@@ -16,7 +17,7 @@ interface CreateTransactionParams {
   customPayload?: TransactionPayload; // Optional custom payload
 }
 
-export function useTransaction({ safeAddress, creatorAddress, onSuccess }: UseTransactionProps) {
+export function useTransaction({ safeAddress, creatorAddress, creatorPubKey, onSuccess }: UseTransactionProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -117,14 +118,14 @@ export function useTransaction({ safeAddress, creatorAddress, onSuccess }: UseTr
         expireTimestamp: String(expireTimestamp),
       };
 
-      // 7. Store Proposal in DB (using authenticated client for RLS)
-      const db = getSupabaseWithWallet(creatorAddress);
+      // 3. Propose transaction to Supabase
+      const db = getSupabaseWithWallet(creatorAddress, creatorPubKey);
       const { error: insertError } = await db
         .from('transactions')
         .insert({
           safe_address: safeAddress,
           payload: { ...payload, txOptions },
-          created_by: creatorAddress,
+          created_by: (creatorPubKey?.toString() || creatorAddress).toLowerCase(),
           sequence_number: nextSequenceNumber,
           status: 'PENDING',
           memo: memo || null,

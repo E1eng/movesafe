@@ -146,10 +146,10 @@ export function SafeDashboardView({ safeAddress, onBack }: SafeDashboardViewProp
                 throw new Error('Could not extract signature from wallet response');
             }
 
-            const db = getSupabaseWithWallet(account.address.toString());
+            const db = getSupabaseWithWallet(account.address.toString(), account.publicKey?.toString());
             const { error } = await db.from('signatures').insert({
                 transaction_id: tx.id,
-                signer_address: account.address.toString(),
+                signer_address: (account.publicKey?.toString() || account.address.toString()).toLowerCase(),
                 signature_hex: sigHex
             });
             if (error) throw error;
@@ -195,7 +195,7 @@ export function SafeDashboardView({ safeAddress, onBack }: SafeDashboardViewProp
             });
 
             await aptos.waitForTransaction({ transactionHash: response.hash });
-            const dbUpdate = getSupabaseWithWallet(account.address.toString());
+            const dbUpdate = getSupabaseWithWallet(account.address.toString(), account.publicKey?.toString());
             await dbUpdate.from('transactions').update({
                 status: 'EXECUTED',
                 tx_hash: response.hash,
@@ -219,7 +219,7 @@ export function SafeDashboardView({ safeAddress, onBack }: SafeDashboardViewProp
     const handleDeleteConfirm = async () => {
         if (!confirmDeleteId) return;
         try {
-            const dbDelete = getSupabaseWithWallet(account!.address.toString());
+            const dbDelete = getSupabaseWithWallet(account!.address.toString(), account?.publicKey?.toString());
             const { error } = await dbDelete.from('transactions').delete().eq('id', confirmDeleteId);
             if (error) throw error;
             toast.success("Transaction discarded");
@@ -262,6 +262,7 @@ export function SafeDashboardView({ safeAddress, onBack }: SafeDashboardViewProp
                                 transactions={transactions}
                                 safe={safe}
                                 userAddress={account?.address?.toString()?.toLowerCase()}
+                                userPubKey={account?.publicKey?.toString()?.toLowerCase()}
                                 signingTxId={signingTxId}
                                 executingTxId={executingTxId}
                                 onSign={handleSign}

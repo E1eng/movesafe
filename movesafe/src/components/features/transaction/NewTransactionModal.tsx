@@ -34,6 +34,7 @@ export function NewTransactionModal({
   const { createTransaction, loading, error, setError } = useTransaction({
     safeAddress,
     creatorAddress: account?.address?.toString() || '',
+    creatorPubKey: account?.publicKey?.toString(),
     onSuccess: () => {
       setRecipient('');
       setAmount('');

@@ -9,6 +9,7 @@ import { aptos } from '@/lib/movement';
 import { toast } from 'sonner';
 import { Input } from '@/components/ui/Input';
 import { useRouter } from 'next/navigation';
+import { generateSafeAddress } from '@/lib/multisig';
 
 interface CreateSafeModalProps {
     isOpen: boolean;
@@ -18,7 +19,7 @@ interface CreateSafeModalProps {
 type Mode = 'invite' | 'manual';
 
 export function CreateSafeModal({ isOpen, onClose }: CreateSafeModalProps) {
-    const { account, signAndSubmitTransaction } = useWallet();
+    const { account, signAndSubmitTransaction, signTransaction } = useWallet();
     const router = useRouter();
     const [loading, setLoading] = useState(false);
     const [mode, setMode] = useState<Mode>('invite');
@@ -36,38 +37,69 @@ export function CreateSafeModal({ isOpen, onClose }: CreateSafeModalProps) {
 
     // INVITE MODE: Create a Draft
     const handleCreateDraft = async () => {
-        if (!connectedPubKey) return;
+        if (!account) {
+            toast.error("Please connect your wallet first");
+            return;
+        }
+
         setLoading(true);
         try {
+            const treasuryAddr = process.env.NEXT_PUBLIC_TREASURY_ADDRESS?.replace(/['"]/g, '').trim().toLowerCase();
+            if (!treasuryAddr) throw new Error("Treasury address is not configured in environment variables.");
+
+            // 1. Pay Platform Fee (1 MOVE)
+            toast.info("Paying Platform Fee (1.0 MOVE)...");
+
+            const response = await signAndSubmitTransaction({
+                data: {
+                    function: '0x1::aptos_account::transfer',
+                    functionArguments: [treasuryAddr, "100000000"], // 1.0 MOVE
+                }
+            });
+
+            // 2. Wait for confirmation
+            await aptos.waitForTransaction({ transactionHash: response.hash });
+            toast.success("Platform Fee Paid successfully!");
+
+            // 3. Create Draft in Supabase
             const joinToken = crypto.randomUUID();
             const adminToken = crypto.randomUUID();
 
             const draft = {
-                name,
+                name: name.trim() || 'Untitled Safe',
                 threshold,
-                owner_limit: threshold, // Same as threshold for simplicity
-                owners: [connectedPubKey], // Using PUBLIC KEY for multisig
+                owner_limit: threshold,
+                owners: [connectedPubKey],
                 created_by_pubkey: connectedPubKey,
                 join_token: joinToken,
                 admin_token: adminToken,
                 status: 'DRAFT'
             };
 
-            const db = getSupabaseWithWallet(account!.address.toString());
-            const { data, error } = await db.from('safe_drafts').insert([draft]).select().single();
-            if (error) throw error;
+            const db = getSupabaseWithWallet(account.address.toString(), account.publicKey?.toString());
+            const { data, error: dbError } = await db.from('safe_drafts').insert([draft]).select().single();
 
-            // Store admin token locally for finalization later
+            if (dbError) {
+                console.error("Supabase error:", dbError);
+                throw new Error(`Failed to save draft: ${dbError.message}`);
+            }
+
+            // 4. Cache Admin Token
             try {
                 const existing = JSON.parse(localStorage.getItem('movesafe_draft_admin_tokens') || '{}');
                 existing[data.id] = adminToken;
                 localStorage.setItem('movesafe_draft_admin_tokens', JSON.stringify(existing));
-            } catch { }
+            } catch (e) {
+                console.warn("Failed to cache admin token locally:", e);
+            }
 
+            toast.success("Safe Draft created! Redirecting...");
             onClose();
             router.push(`/draft/${data.id}?admin=${adminToken}`);
-        } catch (e) {
-            console.error('Failed to create draft:', e);
+        } catch (e: any) {
+            console.error('HandleCreateDraft error:', e);
+            const errorMsg = e.message || 'An unexpected error occurred';
+            toast.error(errorMsg);
         } finally {
             setLoading(false);
         }
@@ -75,66 +107,77 @@ export function CreateSafeModal({ isOpen, onClose }: CreateSafeModalProps) {
 
     // MANUAL MODE: Create Safe directly
     const handleCreateSafe = async () => {
-        if (!account) return;
+        if (!account) {
+            toast.error("Please connect your wallet first");
+            return;
+        }
+
+        if (!name.trim()) {
+            toast.error("Safe name is required");
+            return;
+        }
+
         setLoading(true);
         try {
+            const treasuryAddr = process.env.NEXT_PUBLIC_TREASURY_ADDRESS?.replace(/['"]/g, '').trim().toLowerCase();
+            if (!treasuryAddr) throw new Error("Treasury address not configured.");
+
+            // 1. Pay Platform Fee (1 MOVE)
+            toast.info("Paying Platform Fee (1.0 MOVE)...");
+            const feeResponse = await signAndSubmitTransaction({
+                data: {
+                    function: '0x1::aptos_account::transfer',
+                    functionArguments: [treasuryAddr, "100000000"], // 1.0 MOVE
+                }
+            });
+
+            await aptos.waitForTransaction({ transactionHash: feeResponse.hash });
+            toast.success("Platform Fee Paid!");
+
+            // 2. Derive Safe Address & Create in DB
             const validOwners = owners.filter(o => o.trim()).map(o => o.toLowerCase());
-            const safeAddress = `0x${Array.from(crypto.getRandomValues(new Uint8Array(32)))
-                .map(b => b.toString(16).padStart(2, '0')).join('')}`;
+
+            // Re-validate that all owners have provided public keys (length ~64-66)
+            for (const owner of validOwners) {
+                const clean = owner.replace(/^0x/, '');
+                if (clean.length !== 64) {
+                    throw new Error(`Invalid Public Key: ${owner}. Owners must provide a 64-character public key hex.`);
+                }
+            }
+
+            const safeAddress = generateSafeAddress(validOwners, threshold);
 
             const safe = {
-                address: safeAddress,
-                name,
+                address: safeAddress.toLowerCase(),
+                name: name.trim(),
                 threshold,
                 owners: validOwners
             };
 
-            // 1. Create Safe in Database
-            const dbSafe = getSupabaseWithWallet(account.address.toString());
-            const { error } = await dbSafe.from('safes').insert([safe]);
-            if (error) throw error;
+            const dbSafe = getSupabaseWithWallet(account.address.toString(), account.publicKey?.toString());
+            const { error: dbError } = await dbSafe.from('safes').insert([safe]);
 
-            // 2. Activate Safe & Pay Fee
-            const treasuryAddr = process.env.NEXT_PUBLIC_TREASURY_ADDRESS;
-
-            if (treasuryAddr) {
-                toast.info("Please sign the transaction to Activate Safe & Pay Creation Fee (1 MOVE).");
-
-                try {
-                    const response = await signAndSubmitTransaction({
-                        sender: account.address,
-                        data: {
-                            function: "0x1::aptos_account::batch_transfer",
-                            functionArguments: [
-                                [safeAddress, treasuryAddr], // Recipients
-                                [100000, 99900000]           // Amounts: 0.001 and 0.999 MOVE (Octas)
-                            ]
-                        }
-                    });
-
-                    await aptos.waitForTransaction({ transactionHash: response.hash });
-                    toast.success("Safe Activated & Fee Paid!");
-                } catch (txError) {
-                    console.error("Activation failed:", txError);
-                    toast.error("Safe created but activation failed. Please fund it manually.");
-                    // We don't throw here to allow the UI to complete since DB entry exists
-                }
-            } else {
-                // Fallback: Just simple activation if no Treasury set (or dev mode)
-                // Or we skip auto-funding if not configured, relying on user to fund later
-                toast.warning("Treasury address not set. Please fund the Safe manually to activate.");
+            if (dbError) {
+                console.error("Database error:", dbError);
+                throw new Error(`Failed to save Safe to database: ${dbError.message}`);
             }
 
-            // Local storage update
-            const existing = JSON.parse(localStorage.getItem('movesafe_safes') || '[]');
-            existing.unshift({ ...safe, createdAt: new Date().toISOString() });
-            localStorage.setItem('movesafe_safes', JSON.stringify(existing));
+            // 3. Local storage update
+            try {
+                const existing = JSON.parse(localStorage.getItem('movesafe_safes') || '[]');
+                existing.unshift({ ...safe, createdAt: new Date().toISOString() });
+                localStorage.setItem('movesafe_safes', JSON.stringify(existing));
+            } catch (e) {
+                console.warn("Failed to update local storage:", e);
+            }
 
-            onClose();
             toast.success("Safe Created Successfully!");
-        } catch (e) {
-            console.error(e);
-            toast.error("Failed to create safe");
+            onClose();
+            router.push('/dashboard');
+        } catch (e: any) {
+            console.error("HandleCreateSafe error:", e);
+            const errorMsg = e.message || "Failed to create safe";
+            toast.error(errorMsg);
         } finally {
             setLoading(false);
         }

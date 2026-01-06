@@ -1,6 +1,6 @@
 'use client';
 
-import { Clock, Check, Copy, ChevronDown, ChevronUp, Signature as SignatureIcon, Zap, Trash2, Loader2 } from 'lucide-react';
+import { Clock, Check, Copy, ChevronDown, ChevronUp, Signature as SignatureIcon, Zap, Trash2, Loader2, MessageSquare } from 'lucide-react';
 import { Transaction, Signature } from '@/lib/supabase';
 import { useState } from 'react';
 import { useMovePrice } from '@/hooks/useMovePrice';
@@ -138,6 +138,18 @@ export function TransactionQueueItem({
       {expanded && (
         <div className="px-4 pb-5 md:px-5 space-y-5 animate-in fade-in slide-in-from-top-2 duration-200">
           <div className="h-px w-full bg-zinc-800" />
+          {/* Memo/Description Section */}
+          {transaction.memo && (
+            <div className="flex flex-col gap-2.5 p-4 bg-zinc-950 rounded-2xl border border-zinc-800/50 shadow-inner">
+              <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-zinc-500">
+                <MessageSquare className="w-3.5 h-3.5" />
+                Message
+              </div>
+              <p className="text-sm text-zinc-300 leading-relaxed italic">
+                "{transaction.memo}"
+              </p>
+            </div>
+          )}
 
           {/* Recipient info for Mobile (only if hidden in header) */}
           <div className="md:hidden space-y-3">

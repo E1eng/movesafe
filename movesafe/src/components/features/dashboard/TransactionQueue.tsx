@@ -9,6 +9,7 @@ interface TransactionQueueProps {
     transactions: ExtendedTransaction[];
     safe: Safe;
     userAddress: string | undefined;
+    userPubKey: string | undefined;
     signingTxId: string | null;
     executingTxId: string | null;
     onSign: (tx: ExtendedTransaction) => void;
@@ -18,7 +19,7 @@ interface TransactionQueueProps {
 }
 
 export function TransactionQueue({
-    transactions, safe, userAddress,
+    transactions, safe, userAddress, userPubKey,
     signingTxId, executingTxId,
     onSign, onExecute, onDiscard, onNewTransaction
 }: TransactionQueueProps) {
@@ -52,18 +53,17 @@ export function TransactionQueue({
                 </div>
             ) : (
                 transactions.map(tx => {
-                    const hasSigned = tx.signatures?.some((s) => s.signer_address.toLowerCase() === userAddress);
+                    const hasSigned = tx.signatures?.some((s) => {
+                        const cleanSigSigner = s.signer_address.toLowerCase().replace(/^0x/, '');
+                        const cleanUserPub = (userPubKey || '').replace(/^0x/, '');
+                        return cleanSigSigner === cleanUserPub;
+                    });
 
-                    // Derive addresses from owner public keys for comparison
+                    // Check ownership by comparing public keys
                     const isOwner = safe.owners.some(ownerPubKey => {
-                        try {
-                            const cleanPubKey = ownerPubKey.startsWith('0x') ? ownerPubKey.slice(2) : ownerPubKey;
-                            const pubKey = new Ed25519PublicKey(cleanPubKey);
-                            const derivedAddress = pubKey.authKey().derivedAddress().toString().toLowerCase();
-                            return derivedAddress === userAddress;
-                        } catch {
-                            return false;
-                        }
+                        const cleanOwner = ownerPubKey.toLowerCase().replace(/^0x/, '');
+                        const cleanUserPub = (userPubKey || '').replace(/^0x/, '');
+                        return cleanOwner === cleanUserPub;
                     });
 
                     return (

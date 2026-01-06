@@ -87,13 +87,10 @@ export function assembleMultiSigAuthenticator(
       ? sig.signer.slice(2)
       : sig.signer;
 
-    const signerIndex = owners.findIndex((ownerPublicKey) => {
-      const ownerAddress = ownerPublicKey.authKey().derivedAddress().toString();
-      const cleanOwnerAddress = ownerAddress.startsWith("0x")
-        ? ownerAddress.slice(2).toLowerCase()
-        : ownerAddress.toLowerCase();
-
-      return cleanOwnerAddress === cleanSignerAddress.toLowerCase();
+    const signerIndex = ownerPublicKeys.findIndex((ownerPubKey) => {
+      const cleanOwner = ownerPubKey.toLowerCase().replace(/^0x/, '');
+      const cleanSigner = sig.signer.toLowerCase().replace(/^0x/, '');
+      return cleanOwner === cleanSigner;
     });
 
     if (signerIndex === -1) {
