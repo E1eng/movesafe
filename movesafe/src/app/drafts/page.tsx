@@ -139,16 +139,9 @@ export default function DraftsPage() {
                 </div>
               </div>
 
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-zinc-800 border border-zinc-700">
-                  <Users className="w-3.5 h-3.5 text-zinc-400" />
-                  <span className="text-xs font-mono text-zinc-300">
-                    {draft.owners?.length || 0}/{draft.owner_limit} joined
-                  </span>
-                </div>
-                <div className="text-xs text-zinc-400">
-                  {draft.threshold} sigs required
-                </div>
+              <div className="flex items-center gap-2 text-sm text-zinc-400">
+                <Users className="w-4 h-4" />
+                <span>{draft.owners?.length || 0} of {draft.owner_limit} joined</span>
               </div>
             </motion.button>
           ))}

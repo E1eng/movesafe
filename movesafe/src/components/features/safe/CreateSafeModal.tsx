@@ -27,8 +27,7 @@ export function CreateSafeModal({ isOpen, onClose }: CreateSafeModalProps) {
     const [name, setName] = useState('');
     const [threshold, setThreshold] = useState(2);
 
-    // Invite mode fields
-    const [ownerLimit, setOwnerLimit] = useState(3);
+
 
     // Manual mode fields
     const [owners, setOwners] = useState<string[]>(['']);
@@ -46,7 +45,7 @@ export function CreateSafeModal({ isOpen, onClose }: CreateSafeModalProps) {
             const draft = {
                 name,
                 threshold,
-                owner_limit: ownerLimit,
+                owner_limit: threshold, // Same as threshold for simplicity
                 owners: [connectedPubKey], // Using PUBLIC KEY for multisig
                 created_by_pubkey: connectedPubKey,
                 join_token: joinToken,
@@ -205,7 +204,7 @@ export function CreateSafeModal({ isOpen, onClose }: CreateSafeModalProps) {
 
                         {/* Threshold (shared) */}
                         <div className="space-y-2">
-                            <label className="text-sm font-medium text-zinc-400">Required Signatures</label>
+                            <label className="text-sm font-medium text-zinc-400">Approvals Needed</label>
                             <Input
                                 type="number"
                                 min={1}
@@ -213,25 +212,11 @@ export function CreateSafeModal({ isOpen, onClose }: CreateSafeModalProps) {
                                 onChange={e => setThreshold(parseInt(e.target.value) || 1)}
                                 className="bg-zinc-950 border-zinc-800 text-white rounded-xl"
                             />
+                            <p className="text-xs text-zinc-500">How many members must approve each transaction</p>
                         </div>
 
                         {mode === 'invite' ? (
                             <>
-                                {/* Owner Limit (Invite mode) */}
-                                <div className="space-y-2">
-                                    <label className="text-sm font-medium text-zinc-400">Total Owners</label>
-                                    <Input
-                                        type="number"
-                                        min={threshold}
-                                        value={ownerLimit}
-                                        onChange={e => setOwnerLimit(parseInt(e.target.value) || threshold)}
-                                        className="bg-zinc-950 border-zinc-800 text-white rounded-xl"
-                                    />
-                                    <p className="text-xs text-zinc-500">
-                                        You&apos;ll share an invite link. Others join by connecting their wallet.
-                                    </p>
-                                </div>
-
                                 <button
                                     onClick={handleCreateDraft}
                                     disabled={loading || !name.trim()}
@@ -246,7 +231,7 @@ export function CreateSafeModal({ isOpen, onClose }: CreateSafeModalProps) {
                             <>
                                 {/* Owners (Manual mode) */}
                                 <div className="space-y-2">
-                                    <label className="text-sm font-medium text-zinc-400">Owners</label>
+                                    <label className="text-sm font-medium text-zinc-400">Member Public Keys</label>
                                     <div className="max-h-40 overflow-y-auto space-y-2">
                                         {owners.map((owner, i) => (
                                             <Input
@@ -258,8 +243,8 @@ export function CreateSafeModal({ isOpen, onClose }: CreateSafeModalProps) {
                                             />
                                         ))}
                                     </div>
-                                    <button onClick={addOwner} className="text-blue-400 text-sm font-medium flex items-center gap-1 mt-2">
-                                        <Plus className="w-4 h-4" /> Add Owner
+                                    <button onClick={addOwner} className="text-blue-400 text-sm font-medium flex items-center gap-1 mt-2 hover:text-blue-300 transition-colors">
+                                        <Plus className="w-4 h-4" /> Add Member
                                     </button>
                                 </div>
 
