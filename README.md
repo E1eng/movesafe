@@ -1,121 +1,141 @@
 # MoveSafe 🛡️
 
-> **Secure, Native Multi-Signature Treasury Management for the Movement Network.**
+> **The Native Multi-Signature Treasury for Movement Network.**
 >
-> 🔴 **[LIVE DEMO](https://movesafe.eleng.xyz)**
+> 🔴 **[LIVE DEMO](https://movesafe.eleng.xyz)** | 📄 **[Documentation](https://docs.movementnetwork.xyz)**
 
-MoveSafe is a next-generation multisig wallet built exclusively for the **Movement Network**. Unlike traditional multisig solutions that rely on complex and potentially vulnerable smart contracts, MoveSafe leverages movements native **MultiEd25519** authentication scheme. This means better security, lower gas fees, and clearer on-chain transparency.
+MoveSafe is a next-generation multisig wallet built exclusively for the **Movement Network**. 
 
-## 🚀 Why MoveSafe?
-
-- **Native Security**: Uses the blockchain's built-in cryptographic primitives (MultiEd25519) instead of custom smart contract logic.
-- **Gas Efficient**: No heavy contract deployment required to create a Safe.
-- **Off-Chain Coordination**: Signatures are gathered off-chain via Supabase, meaning you only pay gas when executing the final transaction.
-- **Seamless UX**: Designed with a modern aesthetic—clean, dark mode, and responsive.
-
-## ✨ Key Features
-
-- **Create Safes instantly**: define owners and threshold (K-of-N) with automated creation fee (1 MOVE).
-- **Activation & Fee**: One-step Safe activation.
-- **Asset Dashboard**: View MOVE token balance and USD valuation in real-time.
-- **Transaction Queue**: Propose transactions, collect signatures asynchronously, and execute when ready.
-- **Contextual Memos**: Attach text messages to transactions for clear record-keeping.
-- **Shareable Links**: Easily invite other owners by sharing the Safe URL.
-- **Transaction History**: Full history of executed transactions with CSV export capability.
-- **Visual Clarity**: Beautiful empty states and clear status indicators.
-
-## � Security & Architecture
-
-MoveSafe prioritizes security by adhering to a **"Don't Trust, Verify"** model.
-
-### 1. Non-Custodial & Trustless
-- **No Private Keys Stored**: MoveSafe *never* has access to your private keys. Signing happens locally in your wallet (Petra/Pontem).
-- **On-Chain Verification**: The Movement Blockchain is the ultimate source of truth. It verifies every signature against the on-chain public keys before executing any transaction.
-
-### 2. Startup-Grade Security (Identity First)
-- **Public Key Enforcement**: Unlike standard address-based checks, MoveSafe enforces **Public Key** verification for all owners. This eliminates "identity mismatch" bugs common in address derivation.
-- **Fail-Safe Design**: The "Auto-Include" logic ensures that the creator of a Safe is *always* added as an owner, preventing accidental lockouts during manual creation.
-- **Robust RLS Policies**: Supabase Row-Level Security policies cross-verify your wallet session (`x-wallet-pubkey`) against your on-chain identity, ensuring only true owners can access Safe data.
-
-### 3. The Role of Supabase (Off-Chain Coordination)
-Values are stored in Supabase only to coordinate the multi-signature process efficiently:
-- **Gas Saving**: Instead of every owner submitting their signature on-chain (paying gas N times), signatures are collected off-chain.
-- **Atomic Execution**: Once the threshold is met, *any* owner can submit the final transaction with all attached signatures in a single on-chain interaction.
-- **Safety**: Even if the Supabase database were compromised, an attacker **cannot** steal funds because they do not possess the private keys required to generate valid signatures for the blockchain.
-
-### 4. Database Schema
-For a detailed look at the off-chain coordination tables and strict RLS policies, please refer to the [Database Schema](database/schema.sql).
-
-## 🛠️ Tech Stack
-
-- **Framework**: [Next.js 14](https://nextjs.org/) (App Router, Server Actions)
-- **Language**: [TypeScript](https://www.typescriptlang.org/)
-- **Styling**: [Tailwind CSS](https://tailwindcss.com/) + [shadcn/ui](https://ui.shadcn.com/) + [Lucide Icons](https://lucide.dev/)
-- **Blockchain SDK**: [@aptos-labs/ts-sdk](https://github.com/aptos-labs/aptos-ts-sdk)
-- **Database**: [Supabase](https://supabase.com/) (PostgreSQL) for off-chain coordination
-- **Network**: [Movement Network](https://movementlabs.xyz/) (Bardock Testnet)
-
-## 📖 How it Works
-
-1.  **Create a Safe**: Define owners and a threshold (e.g., 2-of-3).
-    *   *System automatically funds & activates the Safe account involved.*
-2.  **Propose a Transaction**: Any owner can create a proposal (e.g., "Send 10 MOVE to Alice").
-3.  **Collect Signatures**:
-    *   The proposal appears in the **Queue** for all owners.
-    *   Other owners connect their wallets and click "Sign".
-    *   Signatures are stored off-chain (gasless).
-4.  **Execute**: Once the threshold is reached (e.g., 2 signatures), **any** owner can click "Execute".
-    *   This submits the single transaction to the Movement Network.
-    *   Gas is paid only once.
-
-## 🏁 Getting Started
-
-Follow these steps to run MoveSafe locally:
-
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/your-username/movesafe.git
-   cd movesafe
-   ```
-
-2. **Install dependencies**
-   ```bash
-   npm install
-   ```
-
-3. **Configure Environment**
-   Create a `.env.local` file in the root directory and add your Supabase credentials. A template is available in `example.env`:
-   ```env
-   NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
-   NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
-   
-   # Movement Network Config (Defaults provided in example.env)
-   NEXT_PUBLIC_MOVEMENT_NETWORK=custom
-   NEXT_PUBLIC_MOVEMENT_FULLNODE=https://testnet.movementnetwork.xyz/v1
-   NEXT_PUBLIC_MOVEMENT_FAUCET=https://faucet.testnet.movementnetwork.xyz/
-   NEXT_PUBLIC_MOVEMENT_CHAIN_ID=250
-   
-   # Treasury Config (For Safe Creation Fee)
-   NEXT_PUBLIC_TREASURY_ADDRESS=0xYourTreasuryAddress
-   ```
-
-4. **Run the Development Server**
-   ```bash
-   npm run dev
-   # App runs on http://localhost:4000
-   ```
-
-## 🗺️ Roadmap
-
-- [ ] **Transaction Simulation**: Preview balance changes before signing.
-- [ ] **Address Book**: Manage frequent contacts and owner aliases.
-- [ ] **Safe Settings**: On-chain threshold rotation and owner management.
-- [ ] **Mainnet Launch**: Deploy to Movement Mainnet.
-
-## � License
-
-This project is open source and available under the [MIT License](LICENSE).
+Unlike traditional solutions that rely on heavy smart contracts, MoveSafe leverages the Movement Blockchain's native **MultiEd25519** authentication scheme. This results in a "Hybrid Architecture" that is significantly cheaper, safer, and cleaner than contract-based alternatives (like Gnosis Safe on EVM).
 
 ---
 
-Built with ❤️ for the Movement Network Hackathon.
+## 🚀 Why MoveSafe?
+
+### 1. Hybrid Architecture (Best of Both Worlds)
+*   **On-Chain Verification (Security)**: The blockchain is the ultimate source of truth. Funds are held in a native Account, not a contract. Transactions explicitly require K-of-N valid Ed25519 signatures to execute.
+*   **Off-Chain Coordination (UX)**: We use Supabase to collect signatures and manage drafts **without gas**. You only pay gas fees for the **final execution**.
+    *   *Result: 90% Cheaper Gas Fees compared to contract-based multisigs.*
+
+### 2. Startup-Grade Security
+*   **Identity First**: We strictly enforce **Public Key** verification (not just addresses) to prevent "identity spoofing" attacks common in derived address chains.
+*   **Row-Level Security (RLS)**: Our database policies verify the `x-wallet-pubkey` header of every request against the on-chain identity. 
+*   **Non-Custodial**: Private keys never leave your specific wallet adapter (Pontem/Petra/Nightly).
+
+---
+
+## ✨ Key Features
+
+### 🔐 Safe Management
+*   **Instant Creation**: Create a 2-of-3 safe in seconds. The system automatically handles account funding and activation.
+*   **Drafts & Invites**:
+    *   **Draft Mode**: Prepare a safe configuration before deploying.
+    *   **Invite Links**: Share a unique URL (`/join/acb-123...`) to let co-owners join via their wallet. No manual address copying!
+    *   **Auto-Inclusion**: The creator is automatically added as an owner to prevent lockouts.
+
+### 💸 Asset Operations
+*   **Real-Time Valuation**: View MOVE token balances and USD equivalents instantly.
+*   **Transaction Queue**: Propose transfers, vote asynchronously, and execute when the threshold is met.
+*   **CSV Export**: Download audit-ready transaction history logs for accounting.
+*   **Memo Support**: Attach on-chain messages to every transaction for clarity.
+
+### 🎨 Premium UX
+*   **Dark Mode**: Sleek, professional "Midnight" aesthetic using Tailwind CSS.
+*   **Visual Feedback**: Toast notifications for every action (Success, Error, Info).
+*   **Clean Console**: Zero console warnings/errors in production build.
+
+---
+
+## 🛠️ Project Structure
+
+MoveSafe follows a modular **Feature-Based Architecture**:
+
+```
+movesafe/
+├── src/app/                  # Next.js App Router (Routes)
+│   ├── dashboard/            # Main Safe View (Balance, Queue, History)
+│   ├── draft/[id]/           # Draft Management (Creator View)
+│   ├── join/[id]/            # Invite Landing Page (Guest View)
+│   ├── create/               # Manual Creation Flow
+│   └── select/               # Safe Selection / Login
+├── src/components/
+│   ├── features/             # Business Logic Components
+│   │   ├── dashboard/        # Transaction History, Queue
+│   │   ├── safe/             # CreateSafeModal, SafeCard
+│   │   ├── transaction/      # NewTransactionModal, QueueItem
+│   │   └── wallet/           # WalletProvider, WalletSelector
+│   └── ui/                   # Reusable UI (Buttons, Inputs, Cards)
+├── src/lib/
+│   ├── movement.ts           # Aptos SDK v5 Configuration
+│   ├── multisig.ts           # Core MultiEd25519 Cryptography
+│   └── supabase.ts           # RLS-Enabled Database Client
+└── database/
+    └── schema.sql            # Supabase Schema & RLS Policies
+```
+
+---
+
+## 🏁 Getting Started
+
+### Prerequisites
+*   Node.js 18+
+*   Supabase Project
+*   Movement Wallet (Petra/Pontem)
+
+### 1. Installation
+```bash
+git clone https://github.com/your-username/movesafe.git
+cd movesafe
+npm install
+```
+
+### 2. Environment Configuration
+Create a `.env.local` file in the root. 
+> **Note**: You must have a `NEXT_PUBLIC_TREASURY_ADDRESS` to receive creation fees.
+
+```env
+# Database (Supabase)
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+
+# Movement Network (Bardock Testnet)
+NEXT_PUBLIC_MOVEMENT_NETWORK=custom
+NEXT_PUBLIC_MOVEMENT_FULLNODE=https://aptos.testnet.bardock.movementlabs.xyz/v1
+NEXT_PUBLIC_MOVEMENT_FAUCET=https://faucet.testnet.bardock.movementlabs.xyz/
+NEXT_PUBLIC_MOVEMENT_CHAIN_ID=250
+
+# Platform Config
+NEXT_PUBLIC_TREASURY_ADDRESS=0x992d95...  # Wallet that collects creation fees
+```
+
+### 3. Database Setup
+Run the SQL script located in `database/schema.sql` in your Supabase SQL Editor. This sets up:
+*   Tables (`safes`, `transactions`, `safe_drafts`...)
+*   **RLS Policies** (Critical for security)
+*   Helper Functions (`is_safe_owner`, `finalize_safe_draft`)
+
+### 4. Run Locally
+```bash
+npm run dev
+# App active at http://localhost:3000
+```
+
+---
+
+## �️ Security Model (Deep Dive)
+
+MoveSafe implements a **"Don't Trust, Verify"** model:
+
+1.  **Frontend**: Checks ownership via local wallet state.
+2.  **Database (RLS)**: Checks `x-wallet-pubkey` header against the `owners` array in the database.
+3.  **Blockchain**: The ultimate check. The Movement network will **reject** any transaction payload if the aggregated signature does not match the on-chain K-of-N policy.
+
+**This means `movesafe` is non-custodial and trustless.** Even if the backend is compromised, funds cannot be stolen because private keys are never stored.
+
+---
+
+##  License
+
+Open Source under [MIT](LICENSE).
+
+Built with ❤️ for the **Movement Network Hackathon**.

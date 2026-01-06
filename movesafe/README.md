@@ -37,7 +37,8 @@ This project follows a **Feature-based Architecture** to keep things modular.
 - **`page.tsx`**: Connect Wallet landing page.
 - **`dashboard/page.tsx`**: The main Safe Dashboard.
 - **`create/page.tsx`**: Flow for creating a new Safe.
-- **`join/[id]/page.tsx`**: Invite link handling.
+- **`draft/[id]/page.tsx`**: Unified page for managing drafts and handling Invite Links (Join flow).
+- **`drafts/page.tsx`**: List of your pending drafts.
 
 ### `src/components`
 - **`features/`**: Domain-specific components.
