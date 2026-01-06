@@ -13,6 +13,7 @@ interface NewTransactionModalProps {
   isOpen: boolean;
   onClose: () => void;
   safeAddress: string;
+  owners: string[];
   onTransactionCreated: () => void;
 }
 
@@ -20,6 +21,7 @@ export function NewTransactionModal({
   isOpen,
   onClose,
   safeAddress,
+  owners,
   onTransactionCreated,
 }: NewTransactionModalProps) {
   const { account } = useWallet();
@@ -44,6 +46,8 @@ export function NewTransactionModal({
     }
   });
 
+  const isOwner = account?.publicKey && owners.map(o => o.toLowerCase()).includes(account.publicKey.toString().toLowerCase());
+
   const validateRecipient = (value: string) => {
     setRecipient(value);
     if (value) {
@@ -66,6 +70,12 @@ export function NewTransactionModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!isOwner) {
+      setError("You are not an owner of this Safe");
+      return;
+    }
+
     const recipientValid = validateAddress(recipient);
     const amountValid = validateAmount(amount);
 
@@ -99,76 +109,96 @@ export function NewTransactionModal({
       description="Create a new transaction proposal for this safe"
       size="md"
     >
-      <form onSubmit={handleSubmit} className="space-y-5">
-        <Input
-          label="Recipient Address"
-          value={recipient}
-          onChange={(e) => validateRecipient(e.target.value)}
-          placeholder="0x..."
-          icon={<Wallet className="w-4 h-4" />}
-          error={recipientError || undefined}
-          hint="The address that will receive the funds"
-        />
-
-        <div className="space-y-2">
-          <Input
-            label="Amount (MOVE)"
-            type="number"
-            value={amount}
-            onChange={(e) => validateAmountField(e.target.value)}
-            placeholder="0.0"
-            step="0.0001"
-            min="0"
-            icon={<Coins className="w-4 h-4" />}
-            error={amountError || undefined}
-            iconRight={
-              <span className="text-xs px-2 py-0.5 bg-blue-500/10 text-blue-400 rounded-md border border-blue-500/20">MOVE</span>
-            }
-          />
-          {movePrice && amount && !isNaN(parseFloat(amount)) && (
-            <p className="text-xs text-zinc-500 text-right mt-1">
-              ≈ ${(parseFloat(amount) * movePrice).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD
+      {!isOwner ? (
+        <div className="flex flex-col items-center justify-center py-8 text-center space-y-4">
+          <div className="p-4 rounded-full bg-red-500/10 text-red-400">
+            <AlertCircle className="w-8 h-8" />
+          </div>
+          <div>
+            <h3 className="text-lg font-bold text-white">Unauthorized</h3>
+            <p className="text-zinc-400 max-w-xs mx-auto mt-2">
+              Your connected wallet is not an owner of this Safe. Only owners can propose transactions.
             </p>
-          )}
-        </div>
-
-        <div className="space-y-2">
-          <label className="text-sm font-medium text-zinc-300">Message (Optional)</label>
-          <div className="relative">
-            <div className="absolute left-3 top-3 text-zinc-500">
-              <MessageSquare className="w-4 h-4" />
-            </div>
-            <textarea
-              value={memo}
-              onChange={(e) => setMemo(e.target.value)}
-              placeholder="What is this transaction for?"
-              rows={3}
-              maxLength={500}
-              className="w-full pl-10 pr-4 py-2.5 bg-zinc-900 border border-zinc-800 rounded-xl text-white placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500/50 transition-all resize-none"
-            />
           </div>
-          <p className="text-xs text-zinc-600">{memo.length}/500 characters</p>
-        </div>
-
-        {error && (
-          <div className="flex items-start gap-2 p-3 bg-red-500/10 border border-red-500/20 rounded-xl">
-            <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
-            <p className="text-sm text-red-400">{error}</p>
+          <div className="p-3 bg-zinc-900 rounded-lg border border-zinc-800 text-xs font-mono text-zinc-500 break-all max-w-[280px]">
+            {account?.publicKey?.toString() || 'No Public Key'}
           </div>
-        )}
-
-        <ModalFooter>
-          <button
-            type="submit"
-            disabled={loading || !!recipientError || !!amountError || !recipient || !amount}
-            className="flex items-center gap-2 px-4 py-2 bg-white text-black font-medium rounded-xl hover:bg-zinc-200 transition-colors disabled:opacity-50 cursor-pointer"
-          >
-            {loading && <Loader2 className="w-4 h-4 animate-spin" />}
-            <Send className="w-4 h-4" />
-            Create Proposal
+          <button onClick={handleClose} className="px-6 py-2 bg-zinc-800 hover:bg-zinc-700 rounded-xl text-sm font-medium transition-colors cursor-pointer">
+            Close
           </button>
-        </ModalFooter>
-      </form>
+        </div>
+      ) : (
+        <form onSubmit={handleSubmit} className="space-y-5">
+          <Input
+            label="Recipient Address"
+            value={recipient}
+            onChange={(e) => validateRecipient(e.target.value)}
+            placeholder="0x..."
+            icon={<Wallet className="w-4 h-4" />}
+            error={recipientError || undefined}
+            hint="The address that will receive the funds"
+          />
+
+          <div className="space-y-2">
+            <Input
+              label="Amount (MOVE)"
+              type="number"
+              value={amount}
+              onChange={(e) => validateAmountField(e.target.value)}
+              placeholder="0.0"
+              step="0.0001"
+              min="0"
+              icon={<Coins className="w-4 h-4" />}
+              error={amountError || undefined}
+              iconRight={
+                <span className="text-xs px-2 py-0.5 bg-blue-500/10 text-blue-400 rounded-md border border-blue-500/20">MOVE</span>
+              }
+            />
+            {movePrice && amount && !isNaN(parseFloat(amount)) && (
+              <p className="text-xs text-zinc-500 text-right mt-1">
+                ≈ ${(parseFloat(amount) * movePrice).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD
+              </p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-zinc-300">Message (Optional)</label>
+            <div className="relative">
+              <div className="absolute left-3 top-3 text-zinc-500">
+                <MessageSquare className="w-4 h-4" />
+              </div>
+              <textarea
+                value={memo}
+                onChange={(e) => setMemo(e.target.value)}
+                placeholder="What is this transaction for?"
+                rows={3}
+                maxLength={500}
+                className="w-full pl-10 pr-4 py-2.5 bg-zinc-900 border border-zinc-800 rounded-xl text-white placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500/50 transition-all resize-none"
+              />
+            </div>
+            <p className="text-xs text-zinc-600">{memo.length}/500 characters</p>
+          </div>
+
+          {error && (
+            <div className="flex items-start gap-2 p-3 bg-red-500/10 border border-red-500/20 rounded-xl">
+              <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
+              <p className="text-sm text-red-400">{error}</p>
+            </div>
+          )}
+
+          <ModalFooter>
+            <button
+              type="submit"
+              disabled={loading || !!recipientError || !!amountError || !recipient || !amount}
+              className="flex items-center gap-2 px-4 py-2 bg-white text-black font-medium rounded-xl hover:bg-zinc-200 transition-colors disabled:opacity-50 cursor-pointer"
+            >
+              {loading && <Loader2 className="w-4 h-4 animate-spin" />}
+              <Send className="w-4 h-4" />
+              Create Proposal
+            </button>
+          </ModalFooter>
+        </form>
+      )}
     </Modal>
   );
 }

@@ -295,6 +295,7 @@ export function SafeDashboardView({ safeAddress, onBack }: SafeDashboardViewProp
                     isOpen={isTxModalOpen}
                     onClose={() => setIsTxModalOpen(false)}
                     safeAddress={safeAddress}
+                    owners={safe.owners}
                     onTransactionCreated={() => {
                         setIsTxModalOpen(false);
                         loadData();
