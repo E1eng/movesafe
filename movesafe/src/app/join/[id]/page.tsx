@@ -6,6 +6,8 @@ import { Shield, Users, ArrowLeft, Check, Wallet, Loader2 } from 'lucide-react';
 import { useWallet } from '@aptos-labs/wallet-adapter-react';
 import { supabase, SafeDraft } from '@/lib/supabase';
 import { toast } from 'sonner';
+import { WalletSelector } from '@/components/features/wallet/WalletSelector';
+import { useState as useWalletSelectorState } from 'react';
 
 export default function JoinDraftSafePage() {
     const router = useRouter();
@@ -20,6 +22,7 @@ export default function JoinDraftSafePage() {
     const [loading, setLoading] = useState(true);
     const [joining, setJoining] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [walletSelectorOpen, setWalletSelectorOpen] = useState(false);
 
     const connectedPubKey = useMemo(() => {
         if (!account?.publicKey) return null;
@@ -96,8 +99,9 @@ export default function JoinDraftSafePage() {
     if (!draft) {
         return (
             <div className="h-full flex flex-col items-center justify-center bg-black text-white p-8">
-                <div className="w-16 h-16 rounded-3xl bg-zinc-900 border border-zinc-800 flex items-center justify-center mb-4">
-                    <Shield className="w-8 h-8 text-zinc-600" />
+                <div className="w-16 h-16 rounded-3xl bg-zinc-900 border border-zinc-800 flex items-center justify-center mb-4 overflow-hidden">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src="/icon-92x92.png" alt="MoveSafe" className="w-full h-full object-cover" />
                 </div>
                 <h3 className="text-xl font-bold mb-2">Draft Not Found</h3>
                 <p className="text-zinc-500 mb-6">{error || 'This draft may have been deleted.'}</p>
@@ -129,8 +133,9 @@ export default function JoinDraftSafePage() {
                 </button>
 
                 <div className="text-center">
-                    <div className="w-16 h-16 mx-auto rounded-3xl bg-gradient-to-br from-blue-500/20 to-indigo-500/20 border border-blue-500/30 flex items-center justify-center mb-4">
-                        <Shield className="w-8 h-8 text-blue-400" />
+                    <div className="w-16 h-16 mx-auto rounded-3xl bg-gradient-to-br from-blue-500/20 to-indigo-500/20 border border-blue-500/30 flex items-center justify-center mb-4 overflow-hidden">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src="/icon-92x92.png" alt="MoveSafe" className="w-full h-full object-cover" />
                     </div>
                     <h1 className="text-2xl font-bold mb-2">Join Safe</h1>
                     <p className="text-zinc-400">You&apos;ve been invited to join a multisig safe</p>
@@ -163,9 +168,16 @@ export default function JoinDraftSafePage() {
                 {!connected ? (
                     <div className="p-5 rounded-3xl bg-blue-500/10 border border-blue-500/20 text-center">
                         <Wallet className="w-10 h-10 mx-auto mb-3 text-blue-400" />
-                        <p className="text-sm text-blue-300">
+                        <p className="text-sm text-blue-300 mb-4">
                             Connect your wallet to join this safe.
                         </p>
+                        <button
+                            onClick={() => setWalletSelectorOpen(true)}
+                            className="px-6 py-3 bg-white text-black font-bold rounded-xl hover:bg-zinc-200 transition-colors"
+                        >
+                            Connect Wallet
+                        </button>
+                        <WalletSelector isOpen={walletSelectorOpen} onClose={() => setWalletSelectorOpen(false)} />
                     </div>
                 ) : alreadyOwner ? (
                     <div className="p-5 rounded-3xl bg-green-500/10 border border-green-500/20 text-center">
@@ -193,7 +205,8 @@ export default function JoinDraftSafePage() {
                         className="w-full py-4 bg-white text-black font-bold rounded-2xl hover:bg-zinc-200 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
                     >
                         {joining && <Loader2 className="w-4 h-4 animate-spin" />}
-                        <Shield className="w-5 h-5" />
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src="/icon-92x92.png" alt="" className="w-5 h-5 rounded" />
                         {joining ? 'Joining...' : 'Join as Owner'}
                     </button>
                 )}
