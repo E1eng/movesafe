@@ -17,25 +17,44 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql IMMUTABLE SECURITY DEFINER;
 
--- Gets the normalized wallet address from the request header
+-- Gets the normalized wallet address from the request header (x-wallet-address)
 CREATE OR REPLACE FUNCTION public.get_wallet_address()
 RETURNS text AS $$
 BEGIN
-    RETURN public.normalize_address(
-        COALESCE(current_setting('request.headers', true)::json->>'x-wallet-address', '')
-    );
+    RETURN public.normalize_address(COALESCE(current_setting('request.headers', true)::json->>'x-wallet-address', ''));
 END;
 $$ LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = public;
 
--- Checks if a user is an owner of a specific safe
-CREATE OR REPLACE FUNCTION public.is_safe_owner(safe_addr text, user_wallet text)
-RETURNS boolean AS $$
+-- Gets the normalized wallet public key from the request header (x-wallet-pubkey)
+CREATE OR REPLACE FUNCTION public.get_wallet_pubkey()
+RETURNS text AS $$
 BEGIN
+    RETURN public.normalize_address(COALESCE(current_setting('request.headers', true)::json->>'x-wallet-pubkey', ''));
+END;
+$$ LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = public;
+
+-- Identity-aware membership check
+-- Checks if a user is an owner of a specific safe, verifying against both address and public key
+CREATE OR REPLACE FUNCTION public.is_safe_owner(safe_addr text, user_identifier text)
+RETURNS boolean AS $$
+DECLARE
+    norm_id text;
+    norm_safe text;
+    norm_header_addr text;
+    norm_header_pub text;
+BEGIN
+    norm_id := public.normalize_address(user_identifier);
+    norm_safe := public.normalize_address(safe_addr);
+    norm_header_addr := public.get_wallet_address();
+    norm_header_pub := public.get_wallet_pubkey();
+    
     RETURN EXISTS (
         SELECT 1 FROM public.safes
-        WHERE public.normalize_address(address) = public.normalize_address(safe_addr)
-        AND public.normalize_address(user_wallet) = ANY (
-            ARRAY(SELECT public.normalize_address(o) FROM unnest(owners) o)
+        WHERE public.normalize_address(address) = norm_safe
+        AND (
+            norm_id = ANY (ARRAY(SELECT public.normalize_address(o) FROM unnest(owners) o))
+            OR (norm_header_addr <> '' AND norm_header_addr = ANY (ARRAY(SELECT public.normalize_address(o) FROM unnest(owners) o)))
+            OR (norm_header_pub <> '' AND norm_header_pub = ANY (ARRAY(SELECT public.normalize_address(o) FROM unnest(owners) o)))
         )
     );
 END;
@@ -110,55 +129,6 @@ CREATE TABLE IF NOT EXISTS public.safe_drafts (
 -- ============================================================================
 -- 3. FUNCTIONS & RPC
 -- ============================================================================
-
--- Normalization Helper
-CREATE OR REPLACE FUNCTION public.normalize_address(addr text)
-RETURNS text AS $$
-BEGIN
-    RETURN lower(regexp_replace(addr, '^0x', ''));
-END;
-$$ LANGUAGE plpgsql IMMUTABLE SECURITY DEFINER;
-
--- Identity Helpers
-CREATE OR REPLACE FUNCTION public.get_wallet_address()
-RETURNS text AS $$
-BEGIN
-    RETURN public.normalize_address(COALESCE(current_setting('request.headers', true)::json->>'x-wallet-address', ''));
-END;
-$$ LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = public;
-
-CREATE OR REPLACE FUNCTION public.get_wallet_pubkey()
-RETURNS text AS $$
-BEGIN
-    RETURN public.normalize_address(COALESCE(current_setting('request.headers', true)::json->>'x-wallet-pubkey', ''));
-END;
-$$ LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = public;
-
--- is_safe_owner: Identity-aware membership check
-CREATE OR REPLACE FUNCTION public.is_safe_owner(safe_addr text, user_identifier text)
-RETURNS boolean AS $$
-DECLARE
-    norm_id text;
-    norm_safe text;
-    norm_header_addr text;
-    norm_header_pub text;
-BEGIN
-    norm_id := public.normalize_address(user_identifier);
-    norm_safe := public.normalize_address(safe_addr);
-    norm_header_addr := public.get_wallet_address();
-    norm_header_pub := public.get_wallet_pubkey();
-    
-    RETURN EXISTS (
-        SELECT 1 FROM public.safes
-        WHERE public.normalize_address(address) = norm_safe
-        AND (
-            norm_id = ANY (ARRAY(SELECT public.normalize_address(o) FROM unnest(owners) o))
-            OR (norm_header_addr <> '' AND norm_header_addr = ANY (ARRAY(SELECT public.normalize_address(o) FROM unnest(owners) o)))
-            OR (norm_header_pub <> '' AND norm_header_pub = ANY (ARRAY(SELECT public.normalize_address(o) FROM unnest(owners) o)))
-        )
-    );
-END;
-$$ LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = public;
 
 -- join_safe_draft: Normalized owner entry
 CREATE OR REPLACE FUNCTION public.join_safe_draft(draft_id UUID, join_token TEXT, owner_pubkey TEXT)
