@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { aptos } from '@/lib/movement';
-import { supabase } from '@/lib/supabase';
+import { supabase, getSupabaseWithWallet } from '@/lib/supabase';
 import { createTransactionPayload, TransactionPayload } from '@/lib/multisig';
 
 interface UseTransactionProps {
@@ -117,8 +117,9 @@ export function useTransaction({ safeAddress, creatorAddress, onSuccess }: UseTr
         expireTimestamp: String(expireTimestamp),
       };
 
-      // 7. Store Proposal in DB
-      const { error: insertError } = await supabase
+      // 7. Store Proposal in DB (using authenticated client for RLS)
+      const db = getSupabaseWithWallet(creatorAddress);
+      const { error: insertError } = await db
         .from('transactions')
         .insert({
           safe_address: safeAddress,

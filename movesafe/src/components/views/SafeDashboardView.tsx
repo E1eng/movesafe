@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Loader2, History, CheckCircle2, Coins, Users, LogOut, X } from 'lucide-react';
-import { supabase, Safe } from '@/lib/supabase';
+import { supabase, getSupabaseWithWallet, Safe } from '@/lib/supabase';
 import { NewTransactionModal } from '@/components/features/transaction/NewTransactionModal';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { useWallet } from '@aptos-labs/wallet-adapter-react';
@@ -146,7 +146,8 @@ export function SafeDashboardView({ safeAddress, onBack }: SafeDashboardViewProp
                 throw new Error('Could not extract signature from wallet response');
             }
 
-            const { error } = await supabase.from('signatures').insert({
+            const db = getSupabaseWithWallet(account.address.toString());
+            const { error } = await db.from('signatures').insert({
                 transaction_id: tx.id,
                 signer_address: account.address.toString(),
                 signature_hex: sigHex
@@ -194,7 +195,8 @@ export function SafeDashboardView({ safeAddress, onBack }: SafeDashboardViewProp
             });
 
             await aptos.waitForTransaction({ transactionHash: response.hash });
-            await supabase.from('transactions').update({
+            const dbUpdate = getSupabaseWithWallet(account.address.toString());
+            await dbUpdate.from('transactions').update({
                 status: 'EXECUTED',
                 tx_hash: response.hash,
                 executed_at: new Date().toISOString()
@@ -217,7 +219,8 @@ export function SafeDashboardView({ safeAddress, onBack }: SafeDashboardViewProp
     const handleDeleteConfirm = async () => {
         if (!confirmDeleteId) return;
         try {
-            const { error } = await supabase.from('transactions').delete().eq('id', confirmDeleteId);
+            const dbDelete = getSupabaseWithWallet(account!.address.toString());
+            const { error } = await dbDelete.from('transactions').delete().eq('id', confirmDeleteId);
             if (error) throw error;
             toast.success("Transaction discarded");
             loadData();

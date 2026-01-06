@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Link as LinkIcon, Plus, Loader2, UserPlus, Edit3 } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
+import { getSupabaseWithWallet } from '@/lib/supabase';
 import { useWallet } from '@aptos-labs/wallet-adapter-react';
 import { aptos } from '@/lib/movement';
 import { toast } from 'sonner';
@@ -54,7 +54,8 @@ export function CreateSafeModal({ isOpen, onClose }: CreateSafeModalProps) {
                 status: 'DRAFT'
             };
 
-            const { data, error } = await supabase.from('safe_drafts').insert([draft]).select().single();
+            const db = getSupabaseWithWallet(account!.address.toString());
+            const { data, error } = await db.from('safe_drafts').insert([draft]).select().single();
             if (error) throw error;
 
             // Store admin token locally for finalization later
@@ -90,7 +91,8 @@ export function CreateSafeModal({ isOpen, onClose }: CreateSafeModalProps) {
             };
 
             // 1. Create Safe in Database
-            const { error } = await supabase.from('safes').insert([safe]);
+            const dbSafe = getSupabaseWithWallet(account.address.toString());
+            const { error } = await dbSafe.from('safes').insert([safe]);
             if (error) throw error;
 
             // 2. Activate Safe & Pay Fee
