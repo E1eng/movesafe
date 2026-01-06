@@ -27,9 +27,6 @@ export function CreateSafeModal({ isOpen, onClose }: CreateSafeModalProps) {
     // Shared fields
     const [name, setName] = useState('');
     const [threshold, setThreshold] = useState(2);
-
-
-
     // Manual mode fields
     const [owners, setOwners] = useState<string[]>(['']);
 
@@ -80,7 +77,6 @@ export function CreateSafeModal({ isOpen, onClose }: CreateSafeModalProps) {
             const { data, error: dbError } = await db.from('safe_drafts').insert([draft]).select().single();
 
             if (dbError) {
-                console.error("Supabase error:", dbError);
                 throw new Error(`Failed to save draft: ${dbError.message}`);
             }
 
@@ -89,17 +85,15 @@ export function CreateSafeModal({ isOpen, onClose }: CreateSafeModalProps) {
                 const existing = JSON.parse(localStorage.getItem('movesafe_draft_admin_tokens') || '{}');
                 existing[data.id] = adminToken;
                 localStorage.setItem('movesafe_draft_admin_tokens', JSON.stringify(existing));
-            } catch (e) {
-                console.warn("Failed to cache admin token locally:", e);
+            } catch {
+                // local storage fail - silent
             }
 
             toast.success("Safe Draft created! Redirecting...");
             onClose();
             router.push(`/draft/${data.id}?admin=${adminToken}`);
         } catch (e: any) {
-            console.error('HandleCreateDraft error:', e);
-            const errorMsg = e.message || 'An unexpected error occurred';
-            toast.error(errorMsg);
+            toast.error(e.message || 'An unexpected error occurred');
         } finally {
             setLoading(false);
         }
@@ -135,13 +129,20 @@ export function CreateSafeModal({ isOpen, onClose }: CreateSafeModalProps) {
             toast.success("Platform Fee Paid!");
 
             // 2. Derive Safe Address & Create in DB
-            const validOwners = owners.filter(o => o.trim()).map(o => o.toLowerCase());
+            let validOwners = owners
+                .map(o => o.trim().toLowerCase())
+                .filter(o => o.length > 0);
 
-            // Re-validate that all owners have provided public keys (length ~64-66)
+            // AUTO-INCLUDE: Ensure connected wallet is an owner if not already listed
+            if (connectedPubKey && !validOwners.includes(connectedPubKey)) {
+                validOwners.unshift(connectedPubKey);
+            }
+
+            // Re-validate that all owners have provided public keys (length 64 hex chars)
             for (const owner of validOwners) {
                 const clean = owner.replace(/^0x/, '');
                 if (clean.length !== 64) {
-                    throw new Error(`Invalid Public Key: ${owner}. Owners must provide a 64-character public key hex.`);
+                    throw new Error(`Invalid Public Key: ${owner}. Multi-sig owners must provide a 64-character public key hex.`);
                 }
             }
 
@@ -158,7 +159,6 @@ export function CreateSafeModal({ isOpen, onClose }: CreateSafeModalProps) {
             const { error: dbError } = await dbSafe.from('safes').insert([safe]);
 
             if (dbError) {
-                console.error("Database error:", dbError);
                 throw new Error(`Failed to save Safe to database: ${dbError.message}`);
             }
 
@@ -167,17 +167,15 @@ export function CreateSafeModal({ isOpen, onClose }: CreateSafeModalProps) {
                 const existing = JSON.parse(localStorage.getItem('movesafe_safes') || '[]');
                 existing.unshift({ ...safe, createdAt: new Date().toISOString() });
                 localStorage.setItem('movesafe_safes', JSON.stringify(existing));
-            } catch (e) {
-                console.warn("Failed to update local storage:", e);
+            } catch {
+                // ignore
             }
 
             toast.success("Safe Created Successfully!");
             onClose();
             router.push('/dashboard');
         } catch (e: any) {
-            console.error("HandleCreateSafe error:", e);
-            const errorMsg = e.message || "Failed to create safe";
-            toast.error(errorMsg);
+            toast.error(e.message || "Failed to create safe");
         } finally {
             setLoading(false);
         }

@@ -102,7 +102,6 @@ export default function DraftSafePage() {
     try {
       // 1. Generate Safe Address
       const safeAddress = generateSafeAddress(owners, draft.threshold);
-      console.log("Generating Safe Address:", safeAddress);
 
       // 2. Activate Safe Account (0.0001 MOVE)
       toast.info(`Activating Safe account (0.0001 MOVE)...`);
@@ -128,7 +127,6 @@ export default function DraftSafePage() {
       });
 
       if (finalizeError) {
-        console.error("Supabase Finalization Error:", finalizeError);
         throw new Error(`Platform finalization failed: ${finalizeError.message}`);
       }
 
@@ -152,7 +150,6 @@ export default function DraftSafePage() {
       toast.success('Safe finalized successfully!');
       router.push(`/dashboard?safe=${safeAddress}`);
     } catch (e: any) {
-      console.error('Finalization error:', e);
       const msg = e.message || 'Finalization failed. Please check your wallet and try again.';
       setError(msg);
       toast.error(msg);

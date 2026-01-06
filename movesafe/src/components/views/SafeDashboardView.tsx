@@ -86,7 +86,7 @@ export function SafeDashboardView({ safeAddress, onBack }: SafeDashboardViewProp
             }
 
         } catch (e) {
-            console.error("Failed to load dashboard data", e);
+            // Error handling via UI states
         } finally {
             setLoading(false);
         }
@@ -156,7 +156,6 @@ export function SafeDashboardView({ safeAddress, onBack }: SafeDashboardViewProp
             toast.success("Signed successfully");
             loadData();
         } catch (e: unknown) {
-            console.error("Signing failed", e);
             toast.error(`Failed to sign: ${formatError(e)}`);
         } finally {
             setSigningTxId(null);
@@ -205,7 +204,6 @@ export function SafeDashboardView({ safeAddress, onBack }: SafeDashboardViewProp
             toast.success("Transaction Executed!");
             loadData();
         } catch (e: unknown) {
-            console.error("Execution failed", e);
             toast.error(`Execution failed: ${formatError(e)}`);
         } finally {
             setExecutingTxId(null);

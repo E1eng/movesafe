@@ -59,10 +59,6 @@ export async function withMovementClient<T>(
       if (i === aptosClients.length - 1) {
         break;
       }
-      console.warn(
-        `[Movement RPC] ${operation} failed via ${entry.fullnode}. Trying fallback...`,
-        err
-      );
     }
   }
   throw lastError ?? new Error(`[Movement RPC] ${operation} failed on all fullnodes`);
