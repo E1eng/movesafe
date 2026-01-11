@@ -6,7 +6,7 @@
 
 MoveSafe is a next-generation multisig wallet built exclusively for the **Movement Network**. 
 
-Unlike traditional solutions that rely on heavy smart contracts, MoveSafe leverages the Movement Blockchain's native **MultiEd25519** authentication scheme. This results in a "Hybrid Architecture" that is significantly cheaper, safer, and cleaner than contract-based alternatives (like Gnosis Safe on EVM).
+Unlike EVM-based solutions (e.g., Gnosis Safe), MoveSafe operates at the Account Level (L1). This eliminates the smart contract attack surface entirely—no contract logic bugs, no re-entrancy risks.
 
 ---
 
@@ -14,28 +14,22 @@ Unlike traditional solutions that rely on heavy smart contracts, MoveSafe levera
 
 ### 1. Hybrid Architecture (Best of Both Worlds)
 *   **On-Chain Verification (Security)**: The blockchain is the ultimate source of truth. Funds are held in a native Account, not a contract. Transactions explicitly require K-of-N valid Ed25519 signatures to execute.
-*   **Off-Chain Coordination (UX)**: We use Supabase to collect signatures and manage drafts **without gas**. You only pay gas fees for the **final execution**.
-    *   *Result: 90% Cheaper Gas Fees compared to contract-based multisigs.*
-
-### 2. Startup-Grade Security
-*   **Identity First**: We strictly enforce **Public Key** verification (not just addresses) to prevent "identity spoofing" attacks common in derived address chains.
-*   **Row-Level Security (RLS)**: Our database policies verify the `x-wallet-pubkey` header of every request against the on-chain identity. 
-*   **Non-Custodial**: Private keys never leave your specific wallet adapter (Pontem/Petra/Nightly).
+*   **Off-Chain Coordination (UX)**: We use a high-performance database layer to aggregate signatures and manage transaction drafts asynchronusly. This allows teams to coordinate without paying gas for every intermediate step.
 
 ---
 
 ## ✨ Key Features
 
 ### 🔐 Safe Management
-*   **Instant Creation**: Create a 2-of-3 safe in seconds. The system automatically handles account funding and activation.
+*   **No-Contract Security**: By using MultiEd25519, auth logic is part of the L1 protocol.
 *   **Drafts & Invites**:
     *   **Draft Mode**: Prepare a safe configuration before deploying.
     *   **Invite Links**: Share a unique URL (`/join/acb-123...`) to let co-owners join via their wallet. No manual address copying!
     *   **Auto-Inclusion**: The creator is automatically added as an owner to prevent lockouts.
 
 ### 💸 Asset Operations
-*   **Real-Time Valuation**: View MOVE token balances and USD equivalents instantly.
-*   **Transaction Queue**: Propose transfers, vote asynchronously, and execute when the threshold is met.
+*   **Asynchronous Signature Queue**: Owners can sign transactions whenever they are online. Once the threshold is met, anyone can trigger the final atomic execution.
+*   **Real-Time Data**: Live MOVE/USD valuations and transaction status tracking.
 *   **CSV Export**: Download audit-ready transaction history logs for accounting.
 *   **Memo Support**: Attach on-chain messages to every transaction for clarity.
 
